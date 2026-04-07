@@ -1,0 +1,105 @@
+{
+  "last_updated": "2026-04-07T20:11:51Z",
+  "bitcoin": {
+    "price_usd": 69434,
+    "change_24h_pct": -0.41259859974116986,
+    "market_cap": 1388292946064.114
+  },
+  "block_height": 944093,
+  "fear_greed": {
+    "value": 11,
+    "classification": "Extreme Fear",
+    "timestamp": "1775520000"
+  },
+  "macro": {
+    "dxy": {
+      "value": 99.69,
+      "change": null,
+      "date": null
+    },
+    "fed_funds_rate": {
+      "value": 3.64,
+      "change": null,
+      "date": "2026-04-06"
+    },
+    "treasury_10y": {
+      "value": 4.34,
+      "change": 0.008,
+      "date": "2026-04-07"
+    },
+    "cpi": {
+      "value": 2.4,
+      "change": null,
+      "date": "2026-02-01"
+    },
+    "sp500": {
+      "value": 6616.85,
+      "change": null,
+      "date": null
+    }
+  },
+  "debt": {
+    "national_debt": {
+      "value": 38981755.12654077,
+      "change": -18509.380096,
+      "date": "2026-04-03"
+    },
+    "debt_to_gdp": {
+      "value": 135.6,
+      "change": null,
+      "date": "2024 GDP basis"
+    },
+    "deficit": {
+      "value": -1004478.6256831,
+      "change": null,
+      "date": "2026-02-28"
+    }
+  },
+  "stablecoins": {
+    "usdt": {
+      "total_supply": 189618420160.6562,
+      "market_cap": 184118902096
+    },
+    "usdc": {
+      "total_supply": 77904801441.73631,
+      "market_cap": 77893533510
+    }
+  },
+  "etf_flows": {
+    "date": null,
+    "flows": {},
+    "total_daily_flow": null
+  },
+  "asset_returns": {
+    "1M": {
+      "BTC": 5.32,
+      "GOLD": -7.99,
+      "SP500": -1.83
+    },
+    "3M": {
+      "BTC": -23.91,
+      "GOLD": 6.42,
+      "SP500": -4.39
+    },
+    "6M": {
+      "BTC": -42.91,
+      "GOLD": 19.99,
+      "SP500": -1.76
+    },
+    "1Y": {
+      "BTC": -12.32,
+      "GOLD": 60.44,
+      "SP500": 30.71
+    },
+    "3Y": {
+      "BTC": 148.6,
+      "GOLD": 135.35,
+      "SP500": 61.19
+    },
+    "5Y": {
+      "BTC": 19.12,
+      "GOLD": 169.52,
+      "SP500": 61.5
+    }
+  }
+}

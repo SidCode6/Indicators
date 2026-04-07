@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+fetcher/previous_data.json
+venv/
+.DS_Store
+.claude/

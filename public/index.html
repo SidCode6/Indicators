@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indicators Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- NAVIGATION -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <div class="nav-brand">
+        <span class="nav-title">INDICATORS</span>
+      </div>
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div class="nav-links" id="navLinks">
+        <a href="#macro" class="nav-link active" data-section="macro">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+            <polyline points="16 7 22 7 22 13"/>
+          </svg>
+          Macro Intelligence
+        </a>
+        <a href="#liquidity" class="nav-link" data-section="liquidity">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+          </svg>
+          Liquidity &amp; Flows
+        </a>
+        <a href="#assets" class="nav-link" data-section="assets">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          BTC vs Assets
+        </a>
+      </div>
+      <div class="nav-meta">
+        <span class="last-updated" id="lastUpdated">Loading...</span>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <!-- SECTION 1: MACRO INTELLIGENCE -->
+    <section id="macro" class="section">
+      <div class="container">
+        <div class="section-intro text-center">
+          <h2 class="section-title">Macro Intelligence</h2>
+          <p class="section-subtitle">Track the economic indicators that move markets</p>
+        </div>
+
+        <!-- Bitcoin Price Hero -->
+        <div class="btc-hero" id="btcHero">
+          <p class="btc-label">Bitcoin Price</p>
+          <div class="btc-price" id="btcPrice">--</div>
+          <div class="btc-change" id="btcChange">
+            <span class="btc-change-pct" id="btcChangePct">--</span>
+            <span class="text-muted">24h</span>
+            <span class="btc-change-amt" id="btcChangeAmt">--</span>
+          </div>
+          <div class="btc-block" id="btcBlock">
+            <div class="text-muted text-sm">Block Height</div>
+            <div class="btc-block-value" id="btcBlockValue">--</div>
+          </div>
+        </div>
+
+        <!-- Macro Metric Cards (flippable) -->
+        <div class="grid-3" id="macroGrid">
+          <!-- Cards injected by JS -->
+        </div>
+
+        <!-- Debt & Credit Sub-section -->
+        <div class="debt-section">
+          <h3 class="subsection-title">Debt &amp; Credit</h3>
+          <p class="section-desc">The fiat system's compounding debt spiral. Rising debt-to-GDP ratios and persistent deficits require constant money printing.</p>
+          <div class="grid-3" id="debtGrid">
+            <!-- Debt cards injected by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: LIQUIDITY & FLOWS -->
+    <section id="liquidity" class="section">
+      <div class="container">
+        <!-- Stablecoin Supply -->
+        <div class="stablecoin-section">
+          <div class="section-header">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v12M6 12h12"/>
+            </svg>
+            <h3 class="subsection-title mb-0">Stablecoin Supply</h3>
+            <span class="badge badge-blue">Liquidity Indicator</span>
+          </div>
+          <p class="section-desc">Total stablecoin supply represents available "dry powder" for Bitcoin purchases. Rising supply typically signals incoming liquidity.</p>
+          <div class="grid-2" id="stablecoinGrid">
+            <!-- USDT, USDC cards -->
+          </div>
+        </div>
+
+        <!-- Bitcoin ETF Flows -->
+        <div class="etf-section">
+          <div class="section-header">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+            <h3 class="subsection-title mb-0">Bitcoin ETF Flows</h3>
+            <span class="badge badge-green">Institutional Signal</span>
+          </div>
+          <p class="section-desc">Daily ETF flows show institutional sentiment. Consistent inflows signal growing institutional adoption.</p>
+          <div class="grid-3" id="etfGrid">
+            <!-- ETF cards -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: BTC VS ASSETS -->
+    <section id="assets" class="section">
+      <div class="container">
+        <div class="section-intro text-center">
+          <h2 class="section-title">BTC vs Assets</h2>
+          <p class="section-subtitle">How Bitcoin stacks up against traditional assets</p>
+        </div>
+        <div class="container-narrow">
+          <div class="assets-card">
+            <div class="timeframe-buttons" id="timeframeButtons">
+              <!-- Buttons injected by JS -->
+            </div>
+            <div class="asset-list" id="assetList">
+              <!-- Asset ranking cards injected by JS -->
+            </div>
+            <div class="assets-footer" id="assetsFooter">
+              <!-- Summary text -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>Data refreshed hourly from public sources. For personal use only.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
