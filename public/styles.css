@@ -225,6 +225,12 @@ img, svg {
   padding-bottom: 4rem;
 }
 
+/* Subtle horizontal divider between adjacent sections to make the
+   scroll hierarchy easier to scan. The first section has no top border. */
+.section + .section {
+  border-top: 1px solid var(--border-color);
+}
+
 .section-intro {
   margin-bottom: 3rem;
 }
@@ -913,6 +919,32 @@ img, svg {
   color: #fbbf24;
   border-color: rgba(245, 158, 11, 0.25);
 }
+
+/* As-of line under the NODE section header */
+.node-as-of {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+  margin-top: 0.5rem;
+  text-transform: uppercase;
+}
+
+/* Delta sub-line on a fund-strip stat (e.g. AUM change since prior day) */
+.node-stat-delta {
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.125rem;
+}
+
+.node-stat-delta.up { color: var(--green); }
+.node-stat-delta.down { color: var(--red); }
+.node-stat-delta.flat { color: var(--text-muted); }
 
 /* ---- Fund snapshot strip ---- */
 .node-fund-strip {

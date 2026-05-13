@@ -272,11 +272,23 @@ function renderNodeSection() {
     return;
   }
 
+  renderNodeAsOf();
   renderNodeFundStrip();
   renderNodeWatchlist();
   renderNodeEvents();
   renderNodePatterns();
   renderNodeHoldings();
+}
+
+function renderNodeAsOf() {
+  var el = document.getElementById('nodeAsOf');
+  if (!el) return;
+  var hist = nodeData.history_summary || {};
+  var line = 'As of ' + fmtDate(nodeData.as_of);
+  if (hist.num_snapshots && hist.num_snapshots > 1) {
+    line += ' · ' + hist.num_snapshots + ' days of history';
+  }
+  el.textContent = line;
 }
 
 function renderNodeFundStrip() {
@@ -286,28 +298,62 @@ function renderNodeFundStrip() {
   var f = nodeData.fund || {};
   var hist = nodeData.history_summary || {};
 
+  // Build the AUM delta sub-line (only when we have prior-day data)
+  var aumDeltaHtml = '';
+  if (f.total_net_assets_change_usd != null && f.total_net_assets_change_pct != null) {
+    var dUsd = f.total_net_assets_change_usd;
+    var dPct = f.total_net_assets_change_pct;
+    var cls = 'flat';
+    var arrow = '·';
+    if (dPct > 0.001) { cls = 'up'; arrow = '↑'; }
+    else if (dPct < -0.001) { cls = 'down'; arrow = '↓'; }
+    var usdStr = (dUsd >= 0 ? '+' : '−') + fmtUsdCompact(Math.abs(dUsd));
+    aumDeltaHtml =
+      '<div class="node-stat-delta ' + cls + '">' +
+        '<span>' + arrow + '</span>' +
+        '<span>' + escapeHtml(fmtPctSigned(dPct, 2)) + '</span>' +
+        '<span class="text-muted">(' + escapeHtml(usdStr) + ')</span>' +
+      '</div>';
+  }
+
   var stats = [
-    { label: 'NAV', value: f.nav != null ? '$' + f.nav.toFixed(2) : '--' },
-    { label: 'Total Assets', value: fmtUsdCompact(f.total_net_assets_usd) },
-    { label: 'YTD Return',
+    {
+      label: 'NAV',
+      value: f.nav != null ? '$' + f.nav.toFixed(2) : '--'
+    },
+    {
+      label: 'Total Assets',
+      value: fmtUsdCompact(f.total_net_assets_usd),
+      extraHtml: aumDeltaHtml
+    },
+    {
+      label: 'YTD Return',
       value: f.ytd_return_pct != null ? fmtPctSigned(f.ytd_return_pct, 2) : '--',
-      cls: f.ytd_return_pct >= 0 ? 'text-green' : 'text-red' },
-    { label: 'Positions',
+      cls: f.ytd_return_pct >= 0 ? 'text-green' : 'text-red'
+    },
+    {
+      label: 'Positions',
       value: (f.num_holdings != null ? f.num_holdings : '--') + '',
-      sub: f.num_cash_positions ? f.num_cash_positions + ' cash' : '' },
-    { label: 'As Of', value: fmtDate(nodeData.as_of) },
-    { label: 'History',
+      sub: f.num_cash_positions ? f.num_cash_positions + ' cash' : ''
+    },
+    {
+      label: 'History',
       value: hist.num_snapshots ? hist.num_snapshots + 'd' : '--',
-      sub: hist.first_snapshot_date ? 'since ' + fmtDate(hist.first_snapshot_date).split(',')[0] : '' }
+      sub: hist.first_snapshot_date
+        ? 'since ' + fmtDate(hist.first_snapshot_date).split(',')[0]
+        : ''
+    }
   ];
 
   strip.innerHTML = stats.map(function(s) {
     var subHtml = s.sub ? '<div class="node-stat-sub">' + escapeHtml(s.sub) + '</div>' : '';
+    var extraHtml = s.extraHtml || '';
     var valCls = s.cls ? ' ' + s.cls : '';
     return '<div class="node-stat">' +
       '<div class="node-stat-label">' + escapeHtml(s.label) + '</div>' +
       '<div class="node-stat-value' + valCls + '">' + escapeHtml(s.value) + '</div>' +
       subHtml +
+      extraHtml +
     '</div>';
   }).join('');
 }
@@ -315,9 +361,21 @@ function renderNodeFundStrip() {
 function renderNodeWatchlist() {
   var grid = document.getElementById('nodeWatchlistGrid');
   if (!grid) return;
-  var items = nodeData.watchlist || [];
+
+  // Show only watchlist tickers that are actually in the portfolio today
+  // (or just exited/added today). NOT_HELD is hidden — if VanEck adds the
+  // ticker on a future day, its status will flip to ADDED or HELD and the
+  // card will auto-resurface here without any code change.
+  var allItems = nodeData.watchlist || [];
+  var items = allItems.filter(function(item) {
+    return item.status !== 'NOT_HELD';
+  });
+
   if (!items.length) {
-    grid.innerHTML = '<p class="data-unavailable">Watchlist data unavailable</p>';
+    grid.innerHTML = '<div class="node-empty-state">' +
+      'None of your watchlist tickers are currently held in NODE. ' +
+      'Cards will reappear here automatically the day any of them are added.' +
+    '</div>';
     return;
   }
 

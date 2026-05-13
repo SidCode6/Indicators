@@ -510,6 +510,28 @@ def compute_lookback_deltas(snapshots: list[dict]) -> dict:
 # ----------------------------- top-level ------------------------------------
 
 
+def _enrich_fund_with_deltas(snapshots: list[dict]) -> dict:
+    """Copy of today's ``fund`` block with day-over-day deltas added.
+
+    Deltas are None when there's no prior snapshot (first day of history).
+    """
+    today = snapshots[-1]
+    fund = dict(today.get("fund") or {})
+
+    if len(snapshots) >= 2:
+        prior = snapshots[-2]
+        t_aum = (today.get("fund") or {}).get("total_net_assets_usd")
+        p_aum = (prior.get("fund") or {}).get("total_net_assets_usd")
+        if t_aum is not None and p_aum is not None:
+            fund["total_net_assets_prior_usd"] = p_aum
+            fund["total_net_assets_change_usd"] = t_aum - p_aum
+            fund["total_net_assets_change_pct"] = (
+                _pct_change(t_aum, p_aum)
+            )
+            fund["prior_snapshot_date"] = prior.get("as_of")
+    return fund
+
+
 def build_latest(snapshots: list[dict]) -> dict:
     """Top-level assembler: takes snapshots (oldest→newest), returns the
     object the dashboard reads as ``latest.json``.
@@ -524,7 +546,7 @@ def build_latest(snapshots: list[dict]) -> dict:
         "as_of": today["as_of"],
         "fetched_at": today["fetched_at"],
         "source_filename": today.get("source_filename"),
-        "fund": today.get("fund", {}),
+        "fund": _enrich_fund_with_deltas(snapshots),
         "watchlist": compute_watchlist(snapshots),
         "today_events": compute_today_events(snapshots),
         "multi_day_patterns": compute_multi_day_patterns(snapshots),
