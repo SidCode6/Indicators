@@ -45,6 +45,13 @@
           </svg>
           BTC vs Assets
         </a>
+        <a href="#node" class="nav-link" data-section="node">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+          </svg>
+          NODE ETF
+        </a>
       </div>
       <div class="nav-meta">
         <span class="last-updated" id="lastUpdated">Loading...</span>
@@ -146,6 +153,89 @@
             </div>
             <div class="assets-footer" id="assetsFooter">
               <!-- Summary text -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: NODE ETF ANALYSIS -->
+    <section id="node" class="section">
+      <div class="container">
+        <div class="section-intro text-center">
+          <h2 class="section-title">NODE ETF Analysis</h2>
+          <p class="section-subtitle">VanEck Onchain Economy ETF (Matthew Sigel) — daily holdings tracker</p>
+        </div>
+
+        <!-- Fund snapshot strip -->
+        <div class="node-fund-strip" id="nodeFundStrip">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Watchlist: MSTR / ASST / STRC / HODL -->
+        <div class="node-subsection">
+          <div class="section-header">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            <h3 class="subsection-title mb-0">Your Watchlist</h3>
+            <span class="badge badge-amber">BTC focus</span>
+          </div>
+          <p class="section-desc">MSTR, ASST, STRC, HODL — surfaced every day, held or not.</p>
+          <div class="node-watchlist-grid" id="nodeWatchlistGrid">
+            <!-- Watchlist cards injected by JS -->
+          </div>
+        </div>
+
+        <!-- Today's changes -->
+        <div class="node-subsection">
+          <div class="section-header">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            <h3 class="subsection-title mb-0">Today's Changes</h3>
+            <span class="badge badge-blue" id="nodeEventsCount">--</span>
+          </div>
+          <p class="section-desc">Manager moves since the prior trading day — adds, exits, and meaningful share-count changes.</p>
+          <div class="node-events" id="nodeEvents">
+            <!-- Event rows injected by JS -->
+          </div>
+        </div>
+
+        <!-- Multi-day patterns -->
+        <div class="node-subsection">
+          <div class="section-header">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 17 9 11 13 15 21 7"/>
+              <polyline points="14 7 21 7 21 14"/>
+            </svg>
+            <h3 class="subsection-title mb-0">Multi-Day Patterns</h3>
+            <span class="badge badge-green">Conviction signal</span>
+          </div>
+          <p class="section-desc">Tickers the manager has been steadily building or trimming over the trailing window. Share counts only — flow-adjusted where possible.</p>
+          <div class="grid-2 node-patterns-grid" id="nodePatternsGrid">
+            <!-- Accumulating / Distributing columns injected by JS -->
+          </div>
+        </div>
+
+        <!-- All holdings table -->
+        <div class="node-subsection">
+          <div class="section-header">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            <h3 class="subsection-title mb-0">All Holdings</h3>
+            <span class="badge" id="nodeHoldingsCount">--</span>
+          </div>
+          <p class="section-desc">Current portfolio. <span class="text-muted">Tap a row to see multi-day deltas (1d / 7d / 30d).</span></p>
+          <div class="node-holdings-card">
+            <div class="node-holdings-table" id="nodeHoldingsTable">
+              <!-- Holdings rows injected by JS -->
             </div>
           </div>
         </div>

@@ -6,6 +6,10 @@ const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 const TIMEFRAMES = ['1M', '3M', '6M', '1Y', '3Y', '5Y'];
 let currentTimeframe = '1Y';
 let dashboardData = null;
+let nodeData = null;
+
+// User's NODE watchlist (must match server-side WATCHLIST in fetcher/node_etf/analyze.py)
+const NODE_WATCHLIST_TICKERS = ['HODL', 'MSTR', 'ASST', 'STRC'];
 
 // Metric definitions for the flip card backs
 const METRIC_INFO = {
@@ -164,6 +168,22 @@ async function loadData() {
   }
 }
 
+async function loadNodeData() {
+  try {
+    var response = await fetch('node/latest.json?t=' + Date.now());
+    if (!response.ok) throw new Error('Failed to fetch NODE data');
+    nodeData = await response.json();
+  } catch (err) {
+    console.error('NODE data load error:', err);
+    nodeData = null;
+  }
+  try {
+    renderNodeSection();
+  } catch (err) {
+    console.error('NODE render error:', err);
+  }
+}
+
 // ============================================================
 // RENDER FUNCTIONS
 // ============================================================
@@ -190,6 +210,309 @@ function renderDashboard() {
   renderStablecoins();
   renderETFFlows();
   renderAssetComparison();
+}
+
+// ============================================================
+// NODE ETF SECTION
+// ============================================================
+
+function fmtPctSigned(v, digits) {
+  if (digits === undefined) digits = 2;
+  if (v == null) return '--';
+  var sign = v >= 0 ? '+' : '';
+  return sign + v.toFixed(digits) + '%';
+}
+
+function fmtPpSigned(v, digits) {
+  if (digits === undefined) digits = 2;
+  if (v == null) return '--';
+  var sign = v >= 0 ? '+' : '';
+  return sign + v.toFixed(digits) + 'pp';
+}
+
+function fmtShares(v) {
+  if (v == null) return '--';
+  return v.toLocaleString('en-US');
+}
+
+function fmtSharesSigned(v) {
+  if (v == null) return '--';
+  var sign = v >= 0 ? '+' : '';
+  return sign + v.toLocaleString('en-US');
+}
+
+function fmtUsdCompact(v) {
+  if (v == null) return '--';
+  if (Math.abs(v) >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B';
+  if (Math.abs(v) >= 1e6) return '$' + (v / 1e6).toFixed(2) + 'M';
+  if (Math.abs(v) >= 1e3) return '$' + (v / 1e3).toFixed(1) + 'K';
+  return '$' + v.toFixed(0);
+}
+
+function fmtDate(iso) {
+  // 'YYYY-MM-DD' -> 'May 12, 2026'
+  if (!iso) return '--';
+  var parts = iso.split('-');
+  if (parts.length !== 3) return iso;
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var m = parseInt(parts[1], 10);
+  var d = parseInt(parts[2], 10);
+  return months[m - 1] + ' ' + d + ', ' + parts[0];
+}
+
+function renderNodeSection() {
+  if (!nodeData) {
+    var strip = document.getElementById('nodeFundStrip');
+    if (strip) {
+      strip.innerHTML = '<div class="node-stat" style="grid-column:1/-1;">' +
+        '<div class="node-stat-label">NODE ETF</div>' +
+        '<div class="node-stat-value text-muted">Data unavailable — fetch hasn’t run yet.</div>' +
+      '</div>';
+    }
+    return;
+  }
+
+  renderNodeFundStrip();
+  renderNodeWatchlist();
+  renderNodeEvents();
+  renderNodePatterns();
+  renderNodeHoldings();
+}
+
+function renderNodeFundStrip() {
+  var strip = document.getElementById('nodeFundStrip');
+  if (!strip) return;
+
+  var f = nodeData.fund || {};
+  var hist = nodeData.history_summary || {};
+
+  var stats = [
+    { label: 'NAV', value: f.nav != null ? '$' + f.nav.toFixed(2) : '--' },
+    { label: 'Total Assets', value: fmtUsdCompact(f.total_net_assets_usd) },
+    { label: 'YTD Return',
+      value: f.ytd_return_pct != null ? fmtPctSigned(f.ytd_return_pct, 2) : '--',
+      cls: f.ytd_return_pct >= 0 ? 'text-green' : 'text-red' },
+    { label: 'Positions',
+      value: (f.num_holdings != null ? f.num_holdings : '--') + '',
+      sub: f.num_cash_positions ? f.num_cash_positions + ' cash' : '' },
+    { label: 'As Of', value: fmtDate(nodeData.as_of) },
+    { label: 'History',
+      value: hist.num_snapshots ? hist.num_snapshots + 'd' : '--',
+      sub: hist.first_snapshot_date ? 'since ' + fmtDate(hist.first_snapshot_date).split(',')[0] : '' }
+  ];
+
+  strip.innerHTML = stats.map(function(s) {
+    var subHtml = s.sub ? '<div class="node-stat-sub">' + escapeHtml(s.sub) + '</div>' : '';
+    var valCls = s.cls ? ' ' + s.cls : '';
+    return '<div class="node-stat">' +
+      '<div class="node-stat-label">' + escapeHtml(s.label) + '</div>' +
+      '<div class="node-stat-value' + valCls + '">' + escapeHtml(s.value) + '</div>' +
+      subHtml +
+    '</div>';
+  }).join('');
+}
+
+function renderNodeWatchlist() {
+  var grid = document.getElementById('nodeWatchlistGrid');
+  if (!grid) return;
+  var items = nodeData.watchlist || [];
+  if (!items.length) {
+    grid.innerHTML = '<p class="data-unavailable">Watchlist data unavailable</p>';
+    return;
+  }
+
+  grid.innerHTML = items.map(function(item) {
+    var statusKey = (item.status || '').toLowerCase().replace('_', '-');
+    var cls = 'node-watchlist-card ' + statusKey;
+    var summaryCls = 'node-watchlist-summary';
+    var s = (item.summary || '');
+    if (/Increased|Added/i.test(s)) summaryCls += ' up';
+    else if (/Reduced|Exited/i.test(s)) summaryCls += ' down';
+    else summaryCls += ' flat';
+
+    var statusLabel = item.status ? item.status.replace('_', ' ') : '';
+    return '<div class="' + cls + '">' +
+      '<div class="node-watchlist-head">' +
+        '<div>' +
+          '<div class="node-watchlist-ticker">' + escapeHtml(item.ticker) + '</div>' +
+          '<div class="node-watchlist-label">' + escapeHtml(item.label || '') + '</div>' +
+        '</div>' +
+        '<span class="status-pill ' + statusKey + '">' + escapeHtml(statusLabel) + '</span>' +
+      '</div>' +
+      '<div class="' + summaryCls + '">' + escapeHtml(item.summary || '') + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderNodeEvents() {
+  var list = document.getElementById('nodeEvents');
+  var countEl = document.getElementById('nodeEventsCount');
+  if (!list) return;
+
+  var events = nodeData.today_events || [];
+  if (countEl) countEl.textContent = events.length + (events.length === 1 ? ' event' : ' events');
+
+  if (!events.length) {
+    var hist = nodeData.history_summary || {};
+    var msg;
+    if ((hist.num_snapshots || 0) < 2) {
+      msg = 'No comparison yet — this is the first snapshot. Day-over-day changes will appear starting tomorrow.';
+    } else {
+      msg = 'No material changes since the prior trading day. Manager is holding steady.';
+    }
+    list.innerHTML = '<div class="node-empty-state">' + escapeHtml(msg) + '</div>';
+    return;
+  }
+
+  list.innerHTML = events.map(function(ev) {
+    var icon = '•';
+    if (ev.type === 'added') icon = '+';
+    else if (ev.type === 'exited') icon = '✕';
+    else if (ev.type === 'increased') icon = '↑';
+    else if (ev.type === 'decreased') icon = '↓';
+
+    var isWatchlist = NODE_WATCHLIST_TICKERS.indexOf((ev.ticker || '').toUpperCase()) !== -1;
+    var tickerCls = 'ticker' + (isWatchlist ? ' watchlist' : '');
+
+    var detailParts = [];
+    if (ev.delta_shares != null) detailParts.push(fmtSharesSigned(ev.delta_shares) + ' shares');
+    if (ev.delta_shares_pct != null) detailParts.push(fmtPctSigned(ev.delta_shares_pct, 1));
+    if (ev.flow_adjusted_shares_pct != null) detailParts.push('flow-adj ' + fmtPctSigned(ev.flow_adjusted_shares_pct, 1));
+    if (ev.delta_weight_pp != null) detailParts.push(fmtPpSigned(ev.delta_weight_pp, 2) + ' weight');
+    if (ev.weight_pct != null && ev.type === 'added') detailParts.push(ev.weight_pct.toFixed(2) + '% of NAV');
+
+    var verb = '';
+    if (ev.type === 'added') verb = 'Added';
+    else if (ev.type === 'exited') verb = 'Exited';
+    else if (ev.type === 'increased') verb = 'Increased';
+    else if (ev.type === 'decreased') verb = 'Reduced';
+
+    return '<div class="node-event">' +
+      '<div class="node-event-icon ' + escapeHtml(ev.type) + '">' + icon + '</div>' +
+      '<div class="node-event-body">' +
+        '<div class="node-event-title">' +
+          '<span>' + escapeHtml(verb) + '</span>' +
+          '<span class="' + tickerCls + '">' + escapeHtml(ev.ticker || '') + '</span>' +
+          (ev.name ? '<span class="text-muted text-sm">' + escapeHtml(ev.name) + '</span>' : '') +
+        '</div>' +
+        '<div class="node-event-detail">' + escapeHtml(detailParts.join(' • ')) + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderNodePatterns() {
+  var grid = document.getElementById('nodePatternsGrid');
+  if (!grid) return;
+  var p = nodeData.multi_day_patterns || {};
+  var acc = p.accumulating || [];
+  var dist = p.distributing || [];
+
+  function renderColumn(items, kind) {
+    var headerCls = kind === 'up' ? 'up' : 'down';
+    var headerLabel = kind === 'up' ? 'Accumulating' : 'Distributing';
+    var headerArrow = kind === 'up' ? '↗' : '↘';
+
+    var body;
+    if (!p.ready) {
+      var snaps = p.snapshots_in_window || 0;
+      var need = (p.min_days || 3) + 1;
+      body = '<div class="node-empty-state">' +
+        'Need at least ' + need + ' trading days of history (have ' + snaps + '). ' +
+        'Patterns will appear as snapshots accumulate.</div>';
+    } else if (!items.length) {
+      body = '<div class="node-empty-state">No ' + headerLabel.toLowerCase() +
+        ' patterns in the trailing ' + (p.window_days || 7) + '-day window.</div>';
+    } else {
+      body = '<div class="node-pattern-list">' +
+        items.slice(0, 8).map(function(r) {
+          var isWatchlist = NODE_WATCHLIST_TICKERS.indexOf((r.ticker || '').toUpperCase()) !== -1;
+          var tickerCls = 'node-pattern-ticker' + (isWatchlist ? ' watchlist' : '');
+          var detail = r.up_days + '/' + r.pair_count + ' days';
+          if (r.total_delta_pct != null) {
+            detail += ' • ' + fmtPctSigned(r.total_delta_pct, 1);
+          }
+          return '<div class="node-pattern-row">' +
+            '<div>' +
+              '<div class="' + tickerCls + '">' + escapeHtml(r.ticker) +
+                (isWatchlist ? '<span class="node-event-watchlist-pin">★</span>' : '') +
+              '</div>' +
+              '<div class="text-muted text-xs">' + escapeHtml(r.name || '') + '</div>' +
+            '</div>' +
+            '<div class="node-pattern-detail">' + escapeHtml(detail) + '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+    }
+
+    return '<div class="node-pattern-column">' +
+      '<div class="node-pattern-header ' + headerCls + '">' +
+        '<span>' + headerArrow + '</span>' +
+        '<span>' + headerLabel + '</span>' +
+      '</div>' +
+      body +
+    '</div>';
+  }
+
+  grid.innerHTML = renderColumn(acc, 'up') + renderColumn(dist, 'down');
+}
+
+function renderNodeHoldings() {
+  var table = document.getElementById('nodeHoldingsTable');
+  var countEl = document.getElementById('nodeHoldingsCount');
+  if (!table) return;
+
+  // Filter cash positions out of the headline table.
+  var all = (nodeData.holdings || []).filter(function(h) { return !h.is_cash; });
+  if (countEl) countEl.textContent = all.length + ' positions';
+
+  if (!all.length) {
+    table.innerHTML = '<div class="node-empty-state">No holdings data.</div>';
+    return;
+  }
+
+  var lookback = nodeData.lookback_deltas || {};
+
+  var header = '<div class="node-holding-row header">' +
+    '<div>#</div>' +
+    '<div>Ticker</div>' +
+    '<div class="node-holding-name">Name</div>' +
+    '<div class="node-holding-shares">Shares</div>' +
+    '<div class="node-holding-weight">Weight</div>' +
+    '<div class="node-holding-delta">1d Δsh</div>' +
+  '</div>';
+
+  var rows = all.map(function(h, i) {
+    var deltas = (lookback[h.ticker] || {}).deltas || {};
+    var d1 = deltas['1d'] || {};
+    var deltaCls = 'flat', deltaText = '—';
+    if (d1.delta_shares_pct != null) {
+      if (d1.delta_shares_pct > 0.05) { deltaCls = 'up'; deltaText = fmtPctSigned(d1.delta_shares_pct, 1); }
+      else if (d1.delta_shares_pct < -0.05) { deltaCls = 'down'; deltaText = fmtPctSigned(d1.delta_shares_pct, 1); }
+      else { deltaText = '0%'; }
+    } else if (d1.status === 'new_in_window') {
+      deltaCls = 'up'; deltaText = 'NEW';
+    }
+
+    var fundTag = h.is_vaneck_fund ? '<span class="tag-fund">FUND</span>' : '';
+    var isWatchlist = NODE_WATCHLIST_TICKERS.indexOf((h.ticker || '').toUpperCase()) !== -1;
+    var watchlistStar = isWatchlist ? '<span style="color:#fbbf24;font-size:.625rem;">★</span>' : '';
+
+    return '<div class="node-holding-row">' +
+      '<div class="node-holding-rank">' + (i + 1) + '</div>' +
+      '<div class="node-holding-ticker">' +
+        escapeHtml(h.ticker) + watchlistStar + fundTag +
+      '</div>' +
+      '<div class="node-holding-name">' + escapeHtml(h.name || '') + '</div>' +
+      '<div class="node-holding-shares">' + fmtShares(h.shares) + '</div>' +
+      '<div class="node-holding-weight">' +
+        (h.weight_pct != null ? h.weight_pct.toFixed(2) + '%' : '--') +
+      '</div>' +
+      '<div class="node-holding-delta ' + deltaCls + '">' + deltaText + '</div>' +
+    '</div>';
+  }).join('');
+
+  table.innerHTML = header + rows;
 }
 
 function renderBitcoinHero() {
@@ -646,5 +969,7 @@ function initNavigation() {
 document.addEventListener('DOMContentLoaded', function() {
   initNavigation();
   loadData();
+  loadNodeData();
   setInterval(loadData, REFRESH_INTERVAL);
+  setInterval(loadNodeData, REFRESH_INTERVAL);
 });

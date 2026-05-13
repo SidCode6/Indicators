@@ -1,0 +1,1004 @@
+{
+  "ticker": "NODE",
+  "as_of": "2026-05-12",
+  "fetched_at": "2026-05-13T16:06:12Z",
+  "source_filename": "NODE_asof_20260512.xlsx",
+  "fund": {
+    "nav": 45.07,
+    "ytd_return_pct": 30.05,
+    "total_net_assets_usd": 75720000.0,
+    "gross_expense_ratio_pct": 0.69,
+    "net_expense_ratio_pct": 0.67,
+    "inception_date": "2025-05-13",
+    "num_holdings": 60,
+    "num_cash_positions": 7
+  },
+  "watchlist": [
+    {
+      "ticker": "HODL",
+      "category": "btc_direct",
+      "label": "VanEck Bitcoin ETF \u2014 direct BTC exposure",
+      "status": "HELD",
+      "current": {
+        "name": "VanEck Bitcoin ETF",
+        "shares": 318708,
+        "weight_pct": 9.45,
+        "market_value_usd": 7282477.8
+      },
+      "summary": "Currently held: 9.45% of NAV (318,708 shares)"
+    },
+    {
+      "ticker": "MSTR",
+      "category": "btc_treasury",
+      "label": "Strategy Inc \u2014 BTC treasury company",
+      "status": "HELD",
+      "current": {
+        "name": "Strategy Inc",
+        "shares": 5731,
+        "weight_pct": 1.37,
+        "market_value_usd": 1056911.02
+      },
+      "summary": "Currently held: 1.37% of NAV (5,731 shares)"
+    },
+    {
+      "ticker": "ASST",
+      "category": "btc_treasury",
+      "label": "Asset Entities \u2014 BTC treasury company",
+      "status": "NOT_HELD",
+      "summary": "Not currently held"
+    },
+    {
+      "ticker": "STRC",
+      "category": "btc_treasury",
+      "label": "Strategy preferred (Stretch Perpetual Preferred)",
+      "status": "NOT_HELD",
+      "summary": "Not currently held"
+    }
+  ],
+  "today_events": [],
+  "multi_day_patterns": {
+    "accumulating": [],
+    "distributing": [],
+    "window_days": 7,
+    "min_days": 3,
+    "snapshots_in_window": 1,
+    "ready": false
+  },
+  "top_movers": {
+    "weight_gainers": [],
+    "weight_losers": []
+  },
+  "lookback_deltas": {
+    "HODL": {
+      "deltas": {}
+    },
+    "WULF": {
+      "deltas": {}
+    },
+    "HUT": {
+      "deltas": {}
+    },
+    "CIFR": {
+      "deltas": {}
+    },
+    "IREN": {
+      "deltas": {}
+    },
+    "FIGR": {
+      "deltas": {}
+    },
+    "APLD": {
+      "deltas": {}
+    },
+    "CORZ": {
+      "deltas": {}
+    },
+    "000660 KS": {
+      "deltas": {}
+    },
+    "MARA": {
+      "deltas": {}
+    },
+    "RIOT": {
+      "deltas": {}
+    },
+    "CRCL": {
+      "deltas": {}
+    },
+    "GLXY": {
+      "deltas": {}
+    },
+    "SEI": {
+      "deltas": {}
+    },
+    "CLSK": {
+      "deltas": {}
+    },
+    "VRT": {
+      "deltas": {}
+    },
+    "XYZ": {
+      "deltas": {}
+    },
+    "AKER NO": {
+      "deltas": {}
+    },
+    "COIN": {
+      "deltas": {}
+    },
+    "LGN": {
+      "deltas": {}
+    },
+    "MSTR": {
+      "deltas": {}
+    },
+    "TLN": {
+      "deltas": {}
+    },
+    "3443 TT": {
+      "deltas": {}
+    },
+    "NRG": {
+      "deltas": {}
+    },
+    "VST": {
+      "deltas": {}
+    },
+    "BLSH": {
+      "deltas": {}
+    },
+    "WMB": {
+      "deltas": {}
+    },
+    "DTM": {
+      "deltas": {}
+    },
+    "ETHV": {
+      "deltas": {}
+    },
+    "KEEL": {
+      "deltas": {}
+    },
+    "BEP": {
+      "deltas": {}
+    },
+    "IBKR": {
+      "deltas": {}
+    },
+    "AEP": {
+      "deltas": {}
+    },
+    "GPGI": {
+      "deltas": {}
+    },
+    "QNTM LN": {
+      "deltas": {}
+    },
+    "SE": {
+      "deltas": {}
+    },
+    "RDDT": {
+      "deltas": {}
+    },
+    "CEG": {
+      "deltas": {}
+    },
+    "WYFI": {
+      "deltas": {}
+    },
+    "SHOP": {
+      "deltas": {}
+    },
+    "OPRA": {
+      "deltas": {}
+    },
+    "GOOGL": {
+      "deltas": {}
+    },
+    "HOOD": {
+      "deltas": {}
+    },
+    "RPI LN": {
+      "deltas": {}
+    },
+    "NVDA": {
+      "deltas": {}
+    },
+    "FUTU": {
+      "deltas": {}
+    },
+    "MELI": {
+      "deltas": {}
+    },
+    "BWXT": {
+      "deltas": {}
+    },
+    "VSOL": {
+      "deltas": {}
+    },
+    "BTDR": {
+      "deltas": {}
+    },
+    "BE": {
+      "deltas": {}
+    },
+    "3350 JP": {
+      "deltas": {}
+    },
+    "HIVE": {
+      "deltas": {}
+    },
+    "ABXX CN": {
+      "deltas": {}
+    },
+    "ZCSH": {
+      "deltas": {}
+    },
+    "ARLP": {
+      "deltas": {}
+    },
+    "PURR": {
+      "deltas": {}
+    },
+    "BMNR": {
+      "deltas": {}
+    },
+    "CNTN": {
+      "deltas": {}
+    },
+    "MIR": {
+      "deltas": {}
+    }
+  },
+  "holdings": [
+    {
+      "ticker": "HODL",
+      "name": "VanEck Bitcoin ETF",
+      "figi": "BBG01KY678Y1",
+      "shares": 318708,
+      "market_value_usd": 7282477.8,
+      "weight_pct": 9.45,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": true
+    },
+    {
+      "ticker": "WULF",
+      "name": "Terawulf Inc",
+      "figi": "BBG0122MC900",
+      "shares": 197122,
+      "market_value_usd": 4494381.6,
+      "weight_pct": 5.83,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "HUT",
+      "name": "Hut 8 Corp",
+      "figi": "BBG00K8H39V2",
+      "shares": 38884,
+      "market_value_usd": 4172642.04,
+      "weight_pct": 5.41,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "CIFR",
+      "name": "Cipher Mining Inc",
+      "figi": "BBG00XYHY0K2",
+      "shares": 188584,
+      "market_value_usd": 3782995.04,
+      "weight_pct": 4.91,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "IREN",
+      "name": "Iren Ltd",
+      "figi": "BBG010J28KQ2",
+      "shares": 65322,
+      "market_value_usd": 3694612.32,
+      "weight_pct": 4.79,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "FIGR",
+      "name": "Figure Technology Solutions Inc",
+      "figi": "BBG01NGH78G1",
+      "shares": 84666,
+      "market_value_usd": 3344307.0,
+      "weight_pct": 4.34,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "APLD",
+      "name": "Applied Digital Corp",
+      "figi": "BBG000DSJYS8",
+      "shares": 74121,
+      "market_value_usd": 3256135.53,
+      "weight_pct": 4.22,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "CORZ",
+      "name": "Core Scientific Inc",
+      "figi": "BBG01L5GH011",
+      "shares": 115633,
+      "market_value_usd": 2635276.07,
+      "weight_pct": 3.42,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "000660 KS",
+      "name": "Sk Hynix Inc",
+      "figi": "BBG000GQVT51",
+      "shares": 1991,
+      "market_value_usd": 2448447.12,
+      "weight_pct": 3.18,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "MARA",
+      "name": "Mara Holdings Inc",
+      "figi": "BBG001K7WBT8",
+      "shares": 176894,
+      "market_value_usd": 2250091.68,
+      "weight_pct": 2.92,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "RIOT",
+      "name": "Riot Platforms Inc",
+      "figi": "BBG000BQ4512",
+      "shares": 84582,
+      "market_value_usd": 2073104.82,
+      "weight_pct": 2.69,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "CRCL",
+      "name": "Circle Internet Group Inc",
+      "figi": "BBG01T61V2V3",
+      "shares": 15430,
+      "market_value_usd": 1907919.5,
+      "weight_pct": 2.48,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "GLXY",
+      "name": "Galaxy Digital Inc",
+      "figi": "BBG0120SWLS0",
+      "shares": 57168,
+      "market_value_usd": 1793931.84,
+      "weight_pct": 2.33,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "SEI",
+      "name": "Solaris Energy Infrastructure Inc",
+      "figi": "BBG00G7D6C05",
+      "shares": 18414,
+      "market_value_usd": 1403699.22,
+      "weight_pct": 1.82,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "CLSK",
+      "name": "Cleanspark Inc",
+      "figi": "BBG001MB89V6",
+      "shares": 98210,
+      "market_value_usd": 1322888.7,
+      "weight_pct": 1.72,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "VRT",
+      "name": "Vertiv Holdings Co",
+      "figi": "BBG00L2B8KW8",
+      "shares": 3476,
+      "market_value_usd": 1276143.88,
+      "weight_pct": 1.66,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "XYZ",
+      "name": "Block Inc",
+      "figi": "BBG0018SLC07",
+      "shares": 17179,
+      "market_value_usd": 1238949.48,
+      "weight_pct": 1.61,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "AKER NO",
+      "name": "Aker Asa",
+      "figi": "BBG000C2P156",
+      "shares": 8952,
+      "market_value_usd": 1126785.64,
+      "weight_pct": 1.46,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "COIN",
+      "name": "Coinbase Global Inc",
+      "figi": "BBG00ZGF7771",
+      "shares": 5354,
+      "market_value_usd": 1111704.56,
+      "weight_pct": 1.44,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "LGN",
+      "name": "Legence Corp",
+      "figi": "BBG01WRYRPZ1",
+      "shares": 11084,
+      "market_value_usd": 1082463.44,
+      "weight_pct": 1.4,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "MSTR",
+      "name": "Strategy Inc",
+      "figi": "BBG000GQJPZ0",
+      "shares": 5731,
+      "market_value_usd": 1056911.02,
+      "weight_pct": 1.37,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "TLN",
+      "name": "Talen Energy Corp",
+      "figi": "BBG01GWQVVD3",
+      "shares": 2783,
+      "market_value_usd": 1042539.63,
+      "weight_pct": 1.35,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "3443 TT",
+      "name": "Global Unichip Corp",
+      "figi": "BBG000FM8B65",
+      "shares": 6000,
+      "market_value_usd": 1031536.66,
+      "weight_pct": 1.34,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "NRG",
+      "name": "Nrg Energy Inc",
+      "figi": "BBG000D8RG11",
+      "shares": 7225,
+      "market_value_usd": 992281.5,
+      "weight_pct": 1.29,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "VST",
+      "name": "Vistra Corp",
+      "figi": "BBG00DXDL6Q1",
+      "shares": 6553,
+      "market_value_usd": 962439.11,
+      "weight_pct": 1.25,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "BLSH",
+      "name": "Bullish",
+      "figi": "BBG01W8QW0N1",
+      "shares": 21522,
+      "market_value_usd": 921141.6,
+      "weight_pct": 1.2,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "WMB",
+      "name": "Williams Cos Inc/The",
+      "figi": "BBG000BWVCP8",
+      "shares": 12228,
+      "market_value_usd": 913798.44,
+      "weight_pct": 1.19,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "DTM",
+      "name": "Dt Midstream Inc",
+      "figi": "BBG0112Z58J3",
+      "shares": 6130,
+      "market_value_usd": 889340.4,
+      "weight_pct": 1.15,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "ETHV",
+      "name": "VanEck Ethereum ETF",
+      "figi": "BBG01NX8ZGV6",
+      "shares": 24735,
+      "market_value_usd": 825654.3,
+      "weight_pct": 1.07,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": true
+    },
+    {
+      "ticker": "KEEL",
+      "name": "Keel Infrastructure Corp",
+      "figi": "BBG021DN5TF5",
+      "shares": 199359,
+      "market_value_usd": 811391.13,
+      "weight_pct": 1.05,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "BEP",
+      "name": "Brookfield Renewable Partners Lp",
+      "figi": "BBG000DJKCL1",
+      "shares": 22956,
+      "market_value_usd": 787390.8,
+      "weight_pct": 1.02,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "IBKR",
+      "name": "Interactive Brokers Group Inc",
+      "figi": "BBG000LV0836",
+      "shares": 9205,
+      "market_value_usd": 778650.95,
+      "weight_pct": 1.01,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "AEP",
+      "name": "American Electric Power Co Inc",
+      "figi": "BBG000BB9KF2",
+      "shares": 5894,
+      "market_value_usd": 777654.36,
+      "weight_pct": 1.01,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "GPGI",
+      "name": "Composecure Inc",
+      "figi": "BBG00XTTT297",
+      "shares": 58660,
+      "market_value_usd": 752021.2,
+      "weight_pct": 0.98,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "QNTM LN",
+      "name": "VanEck Quantum Computing Ucits ETF",
+      "figi": "BBG01V30CCS6",
+      "shares": 24812,
+      "market_value_usd": 733573.95,
+      "weight_pct": 0.95,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": true
+    },
+    {
+      "ticker": "SE",
+      "name": "Sea Ltd",
+      "figi": "BBG00HTBWMG5",
+      "shares": 7450,
+      "market_value_usd": 715349.0,
+      "weight_pct": 0.93,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "RDDT",
+      "name": "Reddit Inc",
+      "figi": "BBG005K1D4S0",
+      "shares": 4415,
+      "market_value_usd": 672625.25,
+      "weight_pct": 0.87,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "CEG",
+      "name": "Constellation Energy Corp",
+      "figi": "BBG014KFRNP7",
+      "shares": 2219,
+      "market_value_usd": 651498.4,
+      "weight_pct": 0.85,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "WYFI",
+      "name": "Whitefiber Inc",
+      "figi": "BBG01W3459T0",
+      "shares": 24964,
+      "market_value_usd": 651310.76,
+      "weight_pct": 0.85,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "SHOP",
+      "name": "Shopify Inc",
+      "figi": "BBG008HBD923",
+      "shares": 6404,
+      "market_value_usd": 639375.36,
+      "weight_pct": 0.83,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "OPRA",
+      "name": "Opera Ltd",
+      "figi": "BBG00LBLDHJ2",
+      "shares": 34778,
+      "market_value_usd": 628786.24,
+      "weight_pct": 0.82,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "GOOGL",
+      "name": "Alphabet Inc",
+      "figi": "BBG009S39JX6",
+      "shares": 1608,
+      "market_value_usd": 622858.8,
+      "weight_pct": 0.81,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "HOOD",
+      "name": "Robinhood Markets Inc",
+      "figi": "BBG008NMBXN8",
+      "shares": 7757,
+      "market_value_usd": 607140.39,
+      "weight_pct": 0.79,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "RPI LN",
+      "name": "Raspberry Pi Holdings Plc",
+      "figi": "BBG01N605KK9",
+      "shares": 64588,
+      "market_value_usd": 590412.65,
+      "weight_pct": 0.77,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "NVDA",
+      "name": "Nvidia Corp",
+      "figi": "BBG000BBJQV0",
+      "shares": 2545,
+      "market_value_usd": 561885.1,
+      "weight_pct": 0.73,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "FUTU",
+      "name": "Futu Holdings Ltd",
+      "figi": "BBG00MYXW4R8",
+      "shares": 3975,
+      "market_value_usd": 544694.25,
+      "weight_pct": 0.71,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "MELI",
+      "name": "Mercadolibre Inc",
+      "figi": "BBG000GQPB11",
+      "shares": 337,
+      "market_value_usd": 532048.86,
+      "weight_pct": 0.69,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "BWXT",
+      "name": "Bwx Technologies Inc",
+      "figi": "BBG000D86F25",
+      "shares": 2545,
+      "market_value_usd": 526382.35,
+      "weight_pct": 0.68,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "VSOL",
+      "name": "VanEck Solana ETF",
+      "figi": "BBG01YJKBZM5",
+      "shares": 37733,
+      "market_value_usd": 475435.8,
+      "weight_pct": 0.62,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": true
+    },
+    {
+      "ticker": "BTDR",
+      "name": "Bitdeer Technologies Group",
+      "figi": "BBG0142Q8P97",
+      "shares": 32570,
+      "market_value_usd": 417873.1,
+      "weight_pct": 0.54,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "BE",
+      "name": "Bloom Energy Corp",
+      "figi": "BBG000N7KBZ3",
+      "shares": 1451,
+      "market_value_usd": 407281.19,
+      "weight_pct": 0.53,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "3350 JP",
+      "name": "Metaplanet Inc",
+      "figi": "BBG000QCBL87",
+      "shares": 183300,
+      "market_value_usd": 395446.22,
+      "weight_pct": 0.51,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "HIVE",
+      "name": "Hive Blockchain Technologies Ltd",
+      "figi": "BBG000HSWHL3",
+      "shares": 131051,
+      "market_value_usd": 369563.82,
+      "weight_pct": 0.48,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "ABXX CN",
+      "name": "Abaxx Technologies Inc",
+      "figi": "BBG000GR78Q9",
+      "shares": 7712,
+      "market_value_usd": 308547.5,
+      "weight_pct": 0.4,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "ZCSH",
+      "name": "Grayscale Zcash Trust",
+      "figi": "BBG0133B2R11",
+      "shares": 5895,
+      "market_value_usd": 237568.5,
+      "weight_pct": 0.31,
+      "asset_class": "Other",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "ARLP",
+      "name": "Alliance Resource Partners Lp",
+      "figi": "BBG000C14X88",
+      "shares": 8596,
+      "market_value_usd": 217220.92,
+      "weight_pct": 0.28,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "PURR",
+      "name": "Hyperliquid Strategies Inc",
+      "figi": "BBG01Y593H53",
+      "shares": 29519,
+      "market_value_usd": 184493.75,
+      "weight_pct": 0.24,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "BMNR",
+      "name": "Bitmine Immersion Technologies Inc",
+      "figi": "BBG000BWFL03",
+      "shares": 7277,
+      "market_value_usd": 157692.59,
+      "weight_pct": 0.2,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "CNTN",
+      "name": "Canton Strategic Holdings Inc",
+      "figi": "BBG012QFR2V4",
+      "shares": 32064,
+      "market_value_usd": 104849.28,
+      "weight_pct": 0.14,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "MIR",
+      "name": "Mirion Technologies Inc",
+      "figi": "BBG00VHJ1K96",
+      "shares": 36,
+      "market_value_usd": 682.56,
+      "weight_pct": 0.0,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "-USD CASH-",
+      "name": null,
+      "figi": null,
+      "shares": 921660,
+      "market_value_usd": 921660.0,
+      "weight_pct": 1.2,
+      "asset_class": "Cash Bal",
+      "is_cash": true,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "-NOK CASH-",
+      "name": null,
+      "figi": null,
+      "shares": 7,
+      "market_value_usd": 0.75,
+      "weight_pct": 0.0,
+      "asset_class": "Cash Bal",
+      "is_cash": true,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "-KRW CASH-",
+      "name": null,
+      "figi": null,
+      "shares": 242,
+      "market_value_usd": 0.16,
+      "weight_pct": 0.0,
+      "asset_class": "Cash Bal",
+      "is_cash": true,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "-JPY CASH-",
+      "name": null,
+      "figi": null,
+      "shares": 782,
+      "market_value_usd": 4.96,
+      "weight_pct": 0.0,
+      "asset_class": "Cash Bal",
+      "is_cash": true,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "-GBP CASH-",
+      "name": null,
+      "figi": null,
+      "shares": 25,
+      "market_value_usd": 33.64,
+      "weight_pct": 0.0,
+      "asset_class": "Cash Bal",
+      "is_cash": true,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "-EUR CASH-",
+      "name": null,
+      "figi": null,
+      "shares": 29,
+      "market_value_usd": 34.0,
+      "weight_pct": 0.0,
+      "asset_class": "Cash Bal",
+      "is_cash": true,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "--",
+      "name": "Other/Cash",
+      "figi": "--",
+      "shares": null,
+      "market_value_usd": -42524.48,
+      "weight_pct": -0.06,
+      "asset_class": "Cash",
+      "is_cash": true,
+      "is_vaneck_fund": false
+    }
+  ],
+  "history_summary": {
+    "first_snapshot_date": "2026-05-12",
+    "latest_snapshot_date": "2026-05-12",
+    "num_snapshots": 1,
+    "lookback_windows_days": [
+      1,
+      7,
+      30,
+      60,
+      100
+    ]
+  }
+}
