@@ -207,8 +207,6 @@ function renderDashboard() {
   renderBitcoinHero();
   renderMacroCards();
   renderDebtCards();
-  renderStablecoins();
-  renderETFFlows();
   renderAssetComparison();
 }
 
