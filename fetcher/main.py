@@ -398,7 +398,38 @@ def main():
         },
     }
 
+    # --- Per-block freshness ---
+    # For each top-level block, record THIS run's timestamp iff the
+    # underlying source(s) succeeded. Blocks that failed get None here;
+    # the stale-value fallback below will then restore the prior block AND
+    # the prior block's freshness timestamp together. The result: the UI
+    # can show "last successfully updated: HH:MM" for each block.
+    now_iso = data["last_updated"]
+    cg_ok      = results.get("coingecko") is not None
+    yahoo_ok   = results.get("yahoo") is not None
+    fred_ok    = results.get("fred") is not None
+    tickers_ok = results.get("tickers") is not None
+    bc_ok      = results.get("blockchain") is not None
+    fg_ok      = results.get("fear_greed") is not None
+    etf_ok     = results.get("etf_flows") is not None
+    data["_data_freshness"] = {
+        "bitcoin":       now_iso if cg_ok else None,
+        "block_height":  now_iso if bc_ok else None,
+        "fear_greed":    now_iso if fg_ok else None,
+        "macro":         now_iso if (yahoo_ok or fred_ok) else None,
+        "debt":          now_iso if fred_ok else None,
+        "stablecoins":   now_iso if cg_ok else None,
+        "etf_flows":     now_iso if etf_ok else None,
+        "equities":      now_iso if yahoo_ok else None,
+        "treasuries":    now_iso if fred_ok else None,
+        "tickers":       now_iso if tickers_ok else None,
+        "asset_returns": now_iso if yahoo_ok else None,
+    }
+
     # --- Stale-value fallback: substitute any all-null sub-block from previous ---
+    # Because _data_freshness is *not* in NEVER_FALLBACK, any timestamp set to
+    # None above will be restored from previous_data.json — preserving the
+    # accurate "last successful fetch" time per block.
     previous = load_previous_data()
     if previous:
         data = _fill_nulls_from_previous(data, previous)

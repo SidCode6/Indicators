@@ -129,15 +129,33 @@ function getChangeArrow(value) {
 }
 
 function timeAgo(isoString) {
+  if (!isoString) return '—';
   var now = new Date();
   var then = new Date(isoString);
   var diffMs = now - then;
   var mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return 'Just now';
+  if (mins < 1) return 'just now';
   if (mins < 60) return mins + 'm ago';
   var hours = Math.floor(mins / 60);
   if (hours < 24) return hours + 'h ago';
   return Math.floor(hours / 24) + 'd ago';
+}
+
+// Format an ISO timestamp into "10:30 AM EST" — uses NY tz so EST/EDT
+// switches automatically with daylight saving.
+function formatEstClock(isoString) {
+  if (!isoString) return '';
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZoneName: 'short'
+    }).format(new Date(isoString));
+  } catch (e) {
+    return '';
+  }
 }
 
 function escapeHtml(str) {
@@ -193,13 +211,30 @@ async function loadNodeData() {
 function renderDashboard() {
   if (!dashboardData) return;
 
-  // Update last updated
+  // Update "Updated X ago (HH:MM AM/PM EST)" badge + per-block freshness tooltip.
   var el = document.getElementById('lastUpdated');
   if (dashboardData.last_updated) {
-    el.textContent = 'Updated ' + timeAgo(dashboardData.last_updated);
+    var clock = formatEstClock(dashboardData.last_updated);
+    el.textContent = 'Updated ' + timeAgo(dashboardData.last_updated)
+      + (clock ? ' (' + clock + ')' : '');
     el.className = 'last-updated';
 
-    // Check if data is stale (>2 hours)
+    // Build the hover tooltip showing per-block freshness so the user can
+    // tell at a glance if any specific source has gone stale.
+    var freshness = dashboardData._data_freshness || {};
+    var blocks = [
+      ['Bitcoin',       freshness.bitcoin],
+      ['Equities',      freshness.equities],
+      ['Treasuries',    freshness.treasuries],
+      ['Tickers',       freshness.tickers],
+      ['Block height',  freshness.block_height],
+    ];
+    var lines = blocks.map(function(row) {
+      return row[0] + ': ' + timeAgo(row[1]);
+    });
+    el.title = 'Last successful fetch by source:\n' + lines.join('\n');
+
+    // Highlight global staleness if the master timestamp is >2h old.
     var ageMs = Date.now() - new Date(dashboardData.last_updated).getTime();
     if (ageMs > 2 * 60 * 60 * 1000) {
       el.classList.add('text-amber');
@@ -552,7 +587,8 @@ var TREASURY_LABELS = {
   'DTB3':  { name: '3-Month T-Bill',   desc: 'Money-market reference (risk-free rate)' }
 };
 
-var TREASURY_ORDER = ['DTB3', 'DGS2', 'DGS10', 'DGS30'];
+// User dropped 2Y (DGS2) from the UI — keep only short / mid / long ends in a single row.
+var TREASURY_ORDER = ['DTB3', 'DGS10', 'DGS30'];
 
 function renderTreasuries() {
   var grid = document.getElementById('treasuriesGrid');

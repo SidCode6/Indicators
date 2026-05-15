@@ -1,11 +1,11 @@
 {
-  "last_updated": "2026-05-15T04:14:02Z",
+  "last_updated": "2026-05-15T05:03:58Z",
   "bitcoin": {
-    "price_usd": 81024,
-    "change_24h_pct": 2.290704142854531,
-    "market_cap": 1621636470598.0483
+    "price_usd": 80769,
+    "change_24h_pct": 1.721829037785676,
+    "market_cap": 1617610160136.8381
   },
-  "block_height": 949460,
+  "block_height": 949467,
   "fear_greed": {
     "value": 43,
     "classification": "Fear",
@@ -13,8 +13,8 @@
   },
   "macro": {
     "dxy": {
-      "value": 99.04,
-      "change": 0.17,
+      "value": 99.08,
+      "change": 0.2,
       "date": null
     },
     "fed_funds_rate": {
@@ -58,11 +58,11 @@
   "stablecoins": {
     "usdt": {
       "total_supply": 195324426827.8562,
-      "market_cap": 189798349101
+      "market_cap": 189798162586
     },
     "usdc": {
       "total_supply": 76675096197.29613,
-      "market_cap": 76635380651
+      "market_cap": 76630787582
     }
   },
   "etf_flows": {
@@ -82,22 +82,22 @@
       "change_pct": 0.73
     },
     "GOLD": {
-      "value": 4618.3,
-      "change_value": -59.8,
-      "change_pct": -1.28
+      "value": 4613.5,
+      "change_value": -64.6,
+      "change_pct": -1.38
     },
     "OIL": {
-      "value": 102.53,
-      "change_value": 1.36,
-      "change_pct": 1.34
+      "value": 102.5,
+      "change_value": 1.33,
+      "change_pct": 1.31
     },
     "DXY": {
-      "value": 99.04,
-      "change_value": 0.17,
-      "change_pct": 0.17
+      "value": 99.08,
+      "change_value": 0.2,
+      "change_pct": 0.2
     },
     "USDINR": {
-      "value": 95.91,
+      "value": 95.92,
       "change_value": 0.22,
       "change_pct": 0.23
     }
@@ -149,33 +149,46 @@
   "asset_returns": {
     "1M": {
       "SP500": 6.81,
-      "GOLD": -3.79,
-      "BTC": 8.29
+      "GOLD": -3.89,
+      "BTC": 8.02
     },
     "3M": {
       "SP500": 9.73,
-      "GOLD": -8.04,
-      "BTC": 16.11
+      "GOLD": -8.13,
+      "BTC": 15.82
     },
     "6M": {
       "SP500": 11.39,
-      "GOLD": 12.98,
-      "BTC": -13.98
+      "GOLD": 12.87,
+      "BTC": -14.2
     },
     "1Y": {
       "SP500": 26.78,
-      "GOLD": 43.39,
-      "BTC": -21.91
+      "GOLD": 43.25,
+      "BTC": -22.11
     },
     "3Y": {
       "SP500": 82.52,
-      "GOLD": 132.26,
-      "BTC": 199.63
+      "GOLD": 132.02,
+      "BTC": 198.86
     },
     "5Y": {
       "SP500": 79.72,
-      "GOLD": 151.28,
-      "BTC": 74.38
+      "GOLD": 151.02,
+      "BTC": 73.93
     }
+  },
+  "_data_freshness": {
+    "bitcoin": "2026-05-15T05:03:58Z",
+    "block_height": "2026-05-15T05:03:58Z",
+    "fear_greed": "2026-05-15T05:03:58Z",
+    "macro": "2026-05-15T05:03:58Z",
+    "debt": "2026-05-15T05:03:58Z",
+    "stablecoins": "2026-05-15T05:03:58Z",
+    "etf_flows": null,
+    "equities": "2026-05-15T05:03:58Z",
+    "treasuries": "2026-05-15T05:03:58Z",
+    "tickers": "2026-05-15T05:03:58Z",
+    "asset_returns": "2026-05-15T05:03:58Z"
   }
 }

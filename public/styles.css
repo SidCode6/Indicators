@@ -249,6 +249,23 @@ img, svg {
   margin-top: auto;
 }
 
+/* Compact variant for the Treasury yield row — smaller boxes that fit
+   three across cleanly. Reuses .metric-grid-uniform's flex/min-height
+   but overrides the size budget. */
+.metric-grid-compact > .metric-card {
+  padding: 1.125rem 1.25rem;
+  min-height: 8.5rem;
+}
+
+.metric-grid-compact > .metric-card .metric-description {
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.metric-grid-compact > .metric-card .metric-value {
+  font-size: 1.5rem;
+}
+
 .market-section {
   margin-bottom: 2.5rem;
 }
