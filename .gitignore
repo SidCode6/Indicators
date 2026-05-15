@@ -5,3 +5,5 @@ fetcher/previous_data.json
 venv/
 .DS_Store
 .claude/
+fetcher/.kalshi_series_titles.json
+fetcher/.kalshi_series_cache.json

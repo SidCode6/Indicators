@@ -62,6 +62,13 @@ FETCHER_DIR = os.path.dirname(SCRIPT_DIR)
 PROJECT_DIR = os.path.dirname(FETCHER_DIR)
 OUTPUT_PATH = os.path.join(PROJECT_DIR, "public", "kalshi.json")
 
+# Cache of series_ticker -> series_title. Titles rarely change so we cache
+# for 7 days; the cache is populated lazily as we encounter new series.
+# This lets us build correct event-page URLs (which include a slugified
+# series title as the middle path segment — see _build_event_url).
+SERIES_TITLE_CACHE_PATH = os.path.join(FETCHER_DIR, ".kalshi_series_titles.json")
+SERIES_TITLE_CACHE_TTL_SECONDS = 7 * 24 * 3600
+
 # Filter knobs
 MIN_FAVORITE_PCT = 0.83
 MAX_FAVORITE_PCT = 0.98
@@ -320,17 +327,79 @@ def _parse_dollars(s) -> float:
         return 0.0
 
 
-def _build_series_url(series_ticker: str | None) -> str:
-    """Series-page URL — guaranteed to resolve correctly on Kalshi.
+def _load_series_title_cache() -> dict:
+    """Return cached {series_ticker: title} map. Empty dict if missing or stale."""
+    try:
+        if not os.path.exists(SERIES_TITLE_CACHE_PATH):
+            return {}
+        age = time.time() - os.path.getmtime(SERIES_TITLE_CACHE_PATH)
+        if age > SERIES_TITLE_CACHE_TTL_SECONDS:
+            return {}
+        with open(SERIES_TITLE_CACHE_PATH) as f:
+            return json.load(f) or {}
+    except Exception:
+        return {}
 
-    We can't verify event-specific slugs from server-side (Vercel's
-    anti-bot blocks our probes), so we link to the series page. Users
-    land on a page listing every active event in that series, including
-    the live one they clicked on — one extra click, but no mismatches.
+
+def _save_series_title_cache(titles: dict) -> None:
+    try:
+        with open(SERIES_TITLE_CACHE_PATH, "w") as f:
+            json.dump(titles, f, separators=(",", ":"), sort_keys=True)
+    except Exception as e:
+        print(f"[kalshi] title cache save error: {e}")
+
+
+def _fetch_series_title(series_ticker: str) -> str:
+    """Fetch one series's title. Returns "" on error."""
+    try:
+        d = _http_get_json(f"{API_BASE}/series/{series_ticker}", timeout=10)
+        return ((d.get("series") or {}).get("title") or "")
+    except Exception:
+        return ""
+
+
+def _ensure_titles(cache: dict, series_tickers: list[str]) -> dict:
+    """Ensure every ticker in `series_tickers` has a title in `cache`.
+    Lazily fetches missing entries in parallel and persists the updated cache."""
+    missing = [s for s in series_tickers if s not in cache]
+    if not missing:
+        return cache
+    print(f"[kalshi] fetching titles for {len(missing)} new series…")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:
+        for ticker, title in zip(missing, ex.map(_fetch_series_title, missing)):
+            cache[ticker] = title  # store even if "" so we don't retry every run
+    _save_series_title_cache(cache)
+    return cache
+
+
+def _slugify_series_title(title: str) -> str:
+    """Kalshi's URL slug rule, derived empirically from real URLs:
+       title.lower().replace(' ', '-')
+    Trailing spaces become trailing dashes (yes, really — Kalshi preserves them).
     """
+    return title.lower().replace(" ", "-")
+
+
+def _build_event_url(event_ticker: str | None,
+                     series_ticker: str | None,
+                     series_title: str | None) -> str:
+    """Build Kalshi's canonical event-page URL.
+
+    Pattern (confirmed from a user-shared example):
+       /markets/{series-lower}/{slugified-series-title}/{event-ticker-lower}
+       e.g. /markets/kxatpmatch/atp-tennis-match/kxatpmatch-26may15sinmed
+
+    Falls back to the series page if we don't have a title for this series
+    yet (the title cache populates on the next refresh)."""
     if not series_ticker:
         return "https://kalshi.com/calendar"
-    return f"https://kalshi.com/markets/{series_ticker.lower()}"
+    series_lower = series_ticker.lower()
+    if event_ticker and series_title:
+        slug = _slugify_series_title(series_title)
+        event_lower = event_ticker.lower()
+        return f"https://kalshi.com/markets/{series_lower}/{slug}/{event_lower}"
+    # Fallback: series page works (we just lose the specific event drill-down)
+    return f"https://kalshi.com/markets/{series_lower}"
 
 
 def _ends_in_minutes(occurrence_dt, sport_label: str) -> int | None:
@@ -438,6 +507,12 @@ def fetch() -> dict | None:
     _LAST_ERROR["count"] = 0
     _LAST_ERROR["sample"] = ""
 
+    # Phase 0: ensure we have series titles cached for URL construction.
+    # Free on subsequent runs (7-day cache); on first run after a deploy
+    # this adds ~5-15s for ~70 series titles, then is cached.
+    title_cache = _load_series_title_cache()
+    title_cache = _ensure_titles(title_cache, ACTIVE_LIVE_SPORTS_SERIES)
+
     # Phase 1: parallel-fetch all candidate series with conservative
     # concurrency. ~70 series × ~0.3s each = ~5s with 4 workers, well
     # within Kalshi's rate limits (we observed 429s at 12 workers).
@@ -496,7 +571,11 @@ def fetch() -> dict | None:
             "sides": sides,
             "favorite_pct": top_pct,
             "ends_in_minutes": _ends_in_minutes(occ_dt, sport_label),
-            "url": _build_series_url(series_ticker),
+            "url": _build_event_url(
+                e.get("event_ticker"),
+                series_ticker,
+                title_cache.get(series_ticker, ""),
+            ),
         })
 
     # Sort: priority (cricket/IPL) first, then by favorite_pct desc, then
