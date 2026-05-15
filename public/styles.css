@@ -232,6 +232,27 @@ img, svg {
   display: block;
 }
 
+/* Uniform-height grid: every .metric-card inside a .metric-grid-uniform
+   stretches to the tallest sibling so the row of cards is visually flush.
+   Used by both the equities row and the treasuries row on the Macro tab. */
+.metric-grid-uniform {
+  align-items: stretch;
+}
+
+.metric-grid-uniform > .metric-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 11rem;
+}
+
+.metric-grid-uniform > .metric-card .metric-value {
+  margin-top: auto;
+}
+
+.market-section {
+  margin-bottom: 2.5rem;
+}
+
 .section-intro {
   margin-bottom: 3rem;
 }

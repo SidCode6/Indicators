@@ -205,9 +205,115 @@ function renderDashboard() {
   }
 
   renderBitcoinHero();
-  renderMacroCards();
-  renderDebtCards();
+  renderEquities();
+  renderTreasuries();
   renderAssetComparison();
+}
+
+// ============================================================
+// MARKET METRICS (Phase 3): SP500 / NASDAQ100 / GOLD / OIL / DXY / USDINR
+// ============================================================
+
+var EQUITY_LABELS = {
+  'SP500':     { name: 'S&P 500',      desc: 'Benchmark US large-cap index',                prefix: '' },
+  'NASDAQ100': { name: 'NASDAQ 100',   desc: 'Top 100 non-financial US tech-heavy stocks',  prefix: '' },
+  'GOLD':      { name: 'Gold',         desc: 'COMEX Gold Futures (per troy ounce)',         prefix: '$' },
+  'OIL':       { name: 'Crude Oil',    desc: 'WTI Crude Futures (per barrel)',              prefix: '$' },
+  'DXY':       { name: 'Dollar Index', desc: 'US Dollar vs basket of major currencies',     prefix: '' },
+  'USDINR':    { name: 'USD / INR',    desc: 'Indian Rupee per US Dollar',                  prefix: '' }
+};
+
+var EQUITY_ORDER = ['SP500', 'NASDAQ100', 'GOLD', 'OIL', 'DXY', 'USDINR'];
+
+function renderEquities() {
+  var grid = document.getElementById('equitiesGrid');
+  if (!grid) return;
+  var src = dashboardData.equities || {};
+
+  grid.innerHTML = EQUITY_ORDER.map(function(key) {
+    var info = EQUITY_LABELS[key];
+    var d = src[key];
+
+    var valueHtml = '<div class="metric-value">--</div>';
+    var changeHtml = '';
+    if (d && d.value != null) {
+      valueHtml = '<div class="metric-value">' +
+        escapeHtml(info.prefix + d.value.toLocaleString('en-US', {
+          minimumFractionDigits: 2, maximumFractionDigits: 2
+        })) +
+      '</div>';
+    }
+    if (d && d.change_pct != null) {
+      var cls = getChangeClass(d.change_pct);
+      var arrow = getChangeArrow(d.change_pct);
+      var absStr = '';
+      if (d.change_value != null) {
+        var sign = d.change_value >= 0 ? '+' : '−';
+        absStr = ' <span class="text-muted">(' + sign +
+          escapeHtml(info.prefix + Math.abs(d.change_value).toLocaleString('en-US', {
+            minimumFractionDigits: 2, maximumFractionDigits: 2
+          })) + ')</span>';
+      }
+      changeHtml = '<div class="metric-change ' + cls + '">' +
+        arrow + ' ' + formatPercent(d.change_pct) + absStr +
+      '</div>';
+    }
+
+    return '<div class="metric-card fade-in">' +
+      '<h4 class="metric-name">' + escapeHtml(info.name) + '</h4>' +
+      '<p class="metric-description">' + escapeHtml(info.desc) + '</p>' +
+      valueHtml +
+      changeHtml +
+    '</div>';
+  }).join('');
+}
+
+// ============================================================
+// TREASURIES (Phase 3): 2Y / 10Y / 30Y / 3M T-Bill
+// ============================================================
+
+var TREASURY_LABELS = {
+  'DGS2':  { name: '2-Year Treasury',  desc: 'Short-end policy expectations' },
+  'DGS10': { name: '10-Year Treasury', desc: 'Growth & inflation expectations' },
+  'DGS30': { name: '30-Year Treasury', desc: 'Long-duration risk premium' },
+  'DTB3':  { name: '3-Month T-Bill',   desc: 'Money-market reference (risk-free rate)' }
+};
+
+var TREASURY_ORDER = ['DTB3', 'DGS2', 'DGS10', 'DGS30'];
+
+function renderTreasuries() {
+  var grid = document.getElementById('treasuriesGrid');
+  if (!grid) return;
+  var src = dashboardData.treasuries || {};
+
+  grid.innerHTML = TREASURY_ORDER.map(function(key) {
+    var info = TREASURY_LABELS[key];
+    var d = src[key];
+
+    var valueHtml = '<div class="metric-value">--</div>';
+    var changeHtml = '';
+    if (d && d.value != null) {
+      valueHtml = '<div class="metric-value">' + d.value.toFixed(2) + '%</div>';
+    }
+    if (d && d.change != null) {
+      // Yield change is in absolute yield points (often ~0.01-0.10).
+      // Convert to basis points for the badge (1bp = 0.01%).
+      var bps = Math.round(d.change * 100);
+      var cls = getChangeClass(bps);
+      var arrow = getChangeArrow(bps);
+      var sign = bps >= 0 ? '+' : '';
+      changeHtml = '<div class="metric-change ' + cls + '">' +
+        arrow + ' ' + sign + bps + ' bps' +
+      '</div>';
+    }
+
+    return '<div class="metric-card fade-in">' +
+      '<h4 class="metric-name">' + escapeHtml(info.name) + '</h4>' +
+      '<p class="metric-description">' + escapeHtml(info.desc) + '</p>' +
+      valueHtml +
+      changeHtml +
+    '</div>';
+  }).join('');
 }
 
 // ============================================================
