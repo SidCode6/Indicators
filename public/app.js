@@ -972,43 +972,53 @@ function getAssetIcon(symbol) {
 // NAVIGATION
 // ============================================================
 
+// SPA-style tab navigation. Only one section is visible at a time
+// (controlled by the .section-active class in styles.css). Switching tabs
+// hides the others, updates the URL hash for deep-linking, and scrolls
+// back to the top of the page so each tab starts at its header.
 function initNavigation() {
   var navLinks = document.querySelectorAll('.nav-link');
+  var sections = document.querySelectorAll('.section');
+  var validIds = Array.prototype.map.call(sections, function(s) { return s.id; });
 
-  // Smooth scroll and active state
+  function activateTab(sectionId) {
+    if (validIds.indexOf(sectionId) === -1) sectionId = validIds[0] || 'macro';
+    sections.forEach(function(s) {
+      if (s.id === sectionId) s.classList.add('section-active');
+      else s.classList.remove('section-active');
+    });
+    navLinks.forEach(function(l) {
+      if (l.getAttribute('data-section') === sectionId) l.classList.add('active');
+      else l.classList.remove('active');
+    });
+    // Each tab starts at the top — the user shouldn't carry over the
+    // scroll position from a previous tab.
+    window.scrollTo(0, 0);
+  }
+
   navLinks.forEach(function(link) {
     link.addEventListener('click', function(e) {
       e.preventDefault();
       var targetId = link.getAttribute('data-section');
-      var target = document.getElementById(targetId);
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      activateTab(targetId);
+      // Persist the active tab in the URL for refresh / bookmark / share.
+      // replaceState (vs pushState) keeps tab switches out of the browser
+      // history stack — back button takes the user out of the dashboard
+      // rather than between tabs.
+      if (history && history.replaceState) {
+        history.replaceState(null, '', '#' + targetId);
       }
-      // Update active state
-      navLinks.forEach(function(l) { l.classList.remove('active'); });
-      link.classList.add('active');
-
-      // Close mobile menu
+      // Close mobile menu after selection.
       var navLinksContainer = document.getElementById('navLinks');
       if (navLinksContainer) navLinksContainer.classList.remove('open');
     });
   });
 
-  // Intersection observer for active nav highlighting
-  var sections = document.querySelectorAll('.section');
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        navLinks.forEach(function(l) { l.classList.remove('active'); });
-        var activeLink = document.querySelector('.nav-link[data-section="' + entry.target.id + '"]');
-        if (activeLink) activeLink.classList.add('active');
-      }
-    });
-  }, { threshold: 0.3 });
+  // On initial load: honour the URL hash, default to first section.
+  var initialId = (location.hash || '').replace('#', '');
+  activateTab(initialId);
 
-  sections.forEach(function(section) { observer.observe(section); });
-
-  // Mobile menu toggle
+  // Mobile menu toggle (unchanged behaviour).
   var menuBtn = document.getElementById('menuToggle');
   var navLinksContainer = document.getElementById('navLinks');
   if (menuBtn && navLinksContainer) {

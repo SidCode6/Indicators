@@ -218,17 +218,18 @@ img, svg {
 }
 
 /* ============================================================
-   SECTIONS
+   SECTIONS — SPA tab panels
+   Only the section with .section-active is visible at any time. Tab
+   switching is handled by initNavigation() in app.js.
    ============================================================ */
 .section {
   padding-top: 4rem;
   padding-bottom: 4rem;
+  display: none;
 }
 
-/* Subtle horizontal divider between adjacent sections to make the
-   scroll hierarchy easier to scan. The first section has no top border. */
-.section + .section {
-  border-top: 1px solid var(--border-color);
+.section.section-active {
+  display: block;
 }
 
 .section-intro {
@@ -1244,9 +1245,14 @@ img, svg {
   overflow: hidden;
 }
 
+/* Cap the holdings table at ~10 data rows + a sticky header. Anything
+   beyond that scrolls inside the table — keeps the rest of the page
+   compact instead of forcing the user to scroll through 60 rows. */
 .node-holdings-table {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  max-height: 27rem;
+  overflow-y: auto;
 }
 
 .node-holding-row {
@@ -1276,6 +1282,10 @@ img, svg {
   letter-spacing: 0.08em;
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
+  /* Keep the column labels visible while the table scrolls below. */
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .node-holding-row:hover:not(.header) {
