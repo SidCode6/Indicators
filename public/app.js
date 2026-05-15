@@ -7,6 +7,8 @@ const TIMEFRAMES = ['1M', '3M', '6M', '1Y', '3Y', '5Y'];
 let currentTimeframe = '1Y';
 let dashboardData = null;
 let nodeData = null;
+let btcChartData = null;
+let btcChartInstance = null;
 
 // User's NODE watchlist (must match server-side WATCHLIST in fetcher/node_etf/analyze.py)
 const NODE_WATCHLIST_TICKERS = ['HODL', 'MSTR', 'ASST', 'STRC'];
@@ -205,9 +207,280 @@ function renderDashboard() {
   }
 
   renderBitcoinHero();
+  renderTickerCards();
   renderEquities();
   renderTreasuries();
   renderAssetComparison();
+}
+
+// ============================================================
+// TICKER CARDS (Phase 4): MSTR / ASST / STRC / SATA
+// ============================================================
+
+var TICKER_LABELS = {
+  'MSTR': 'Strategy Inc',
+  'ASST': 'Strive Inc',
+  'STRC': 'Strategy Preferred',
+  'SATA': 'Strive Preferred'
+};
+var TICKER_ORDER = ['MSTR', 'ASST', 'STRC', 'SATA'];
+
+function renderTickerCards() {
+  var row = document.getElementById('tickerRow');
+  if (!row) return;
+  var src = dashboardData.tickers || {};
+
+  row.innerHTML = TICKER_ORDER.map(function(sym) {
+    var d = src[sym];
+    var name = TICKER_LABELS[sym] || sym;
+
+    if (!d || d.value == null) {
+      return '<div class="ticker-card">' +
+        '<div class="ticker-card-head">' +
+          '<span class="ticker-symbol">' + escapeHtml(sym) + '</span>' +
+          '<span class="ticker-name">' + escapeHtml(name) + '</span>' +
+        '</div>' +
+        '<div class="ticker-price text-muted">—</div>' +
+        '<div class="ticker-change flat">No data</div>' +
+      '</div>';
+    }
+
+    var pct = d.change_pct;
+    var absVal = d.change_value;
+    var cls = 'flat';
+    var arrow = '·';
+    if (pct != null && pct > 0.001) { cls = 'up'; arrow = '↑'; }
+    else if (pct != null && pct < -0.001) { cls = 'down'; arrow = '↓'; }
+
+    var pctStr = pct != null
+      ? (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%'
+      : '--';
+    var absStr = '';
+    if (absVal != null) {
+      var sign = absVal >= 0 ? '+$' : '−$';
+      absStr = '<span class="text-muted">' + sign +
+        Math.abs(absVal).toLocaleString('en-US', {
+          minimumFractionDigits: 2, maximumFractionDigits: 2
+        }) + '</span>';
+    }
+
+    return '<div class="ticker-card fade-in">' +
+      '<div class="ticker-card-head">' +
+        '<span class="ticker-symbol">' + escapeHtml(sym) + '</span>' +
+        '<span class="ticker-name">' + escapeHtml(name) + '</span>' +
+      '</div>' +
+      '<div class="ticker-price">$' +
+        d.value.toLocaleString('en-US', {
+          minimumFractionDigits: 2, maximumFractionDigits: 2
+        }) +
+      '</div>' +
+      '<div class="ticker-change ' + cls + '">' +
+        '<span>' + arrow + ' ' + escapeHtml(pctStr) + '</span>' +
+        absStr +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ============================================================
+// BTC CHART (Phase 4)
+// ============================================================
+
+var CHART_TIMEFRAMES = [
+  { key: '24H', source: 'intraday', points: 24 },
+  { key: '1W',  source: 'intraday', points: null }, // all intraday
+  { key: '1M',  source: 'daily',    points: 30 },
+  { key: '3M',  source: 'daily',    points: 90 },
+  { key: '1Y',  source: 'daily',    points: 365 },
+  { key: '3Y',  source: 'daily',    points: 1095 },
+  { key: '5Y',  source: 'daily',    points: 1825 },
+  { key: '10Y', source: 'daily',    points: null } // all daily
+];
+var currentChartTf = '1M';
+
+async function loadBtcChart() {
+  try {
+    var resp = await fetch('charts/btc.json?t=' + Date.now());
+    if (!resp.ok) throw new Error('chart fetch failed: ' + resp.status);
+    btcChartData = await resp.json();
+  } catch (err) {
+    console.error('BTC chart load error:', err);
+    btcChartData = null;
+  }
+  try {
+    initBtcChartUI();
+  } catch (err) {
+    console.error('BTC chart render error:', err);
+  }
+}
+
+function initBtcChartUI() {
+  var tfContainer = document.getElementById('chartTimeframes');
+  if (tfContainer && !tfContainer.dataset.wired) {
+    tfContainer.innerHTML = CHART_TIMEFRAMES.map(function(tf) {
+      var cls = 'chart-tf-btn' + (tf.key === currentChartTf ? ' active' : '');
+      return '<button class="' + cls + '" data-tf="' + tf.key + '">' +
+        tf.key + '</button>';
+    }).join('');
+    tfContainer.dataset.wired = '1';
+    tfContainer.querySelectorAll('.chart-tf-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        currentChartTf = btn.getAttribute('data-tf');
+        renderBtcChart();
+      });
+    });
+  }
+  renderBtcChart();
+}
+
+function _getChartSeries(tfKey) {
+  if (!btcChartData) return null;
+  var tf = CHART_TIMEFRAMES.find(function(x) { return x.key === tfKey; });
+  if (!tf) return null;
+  var src = btcChartData[tf.source] || [];
+  if (tf.points && src.length > tf.points) {
+    src = src.slice(-tf.points);
+  }
+  return src;
+}
+
+function renderBtcChart() {
+  var canvas = document.getElementById('btcChart');
+  if (!canvas) return;
+
+  // Toggle active state on buttons
+  document.querySelectorAll('.chart-tf-btn').forEach(function(b) {
+    if (b.getAttribute('data-tf') === currentChartTf) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+
+  var series = _getChartSeries(currentChartTf);
+  if (!series || series.length < 2) {
+    var labelEl = document.getElementById('chartTfLabel');
+    var chgEl = document.getElementById('chartTfChange');
+    var amtEl = document.getElementById('chartTfAmount');
+    if (labelEl) labelEl.textContent = currentChartTf;
+    if (chgEl) { chgEl.textContent = 'Loading...'; chgEl.className = 'chart-tf-change'; }
+    if (amtEl) amtEl.textContent = '';
+    return;
+  }
+
+  // Header stats: first vs last price in the window
+  var firstPx = series[0][1];
+  var lastPx = series[series.length - 1][1];
+  var diffAmt = lastPx - firstPx;
+  var diffPct = (lastPx - firstPx) / firstPx * 100;
+  var up = diffPct >= 0;
+
+  document.getElementById('chartTfLabel').textContent = currentChartTf;
+  var chgEl = document.getElementById('chartTfChange');
+  chgEl.textContent = (up ? '+' : '') + diffPct.toFixed(2) + '%';
+  chgEl.className = 'chart-tf-change ' + (up ? 'up' : 'down');
+  var amtEl = document.getElementById('chartTfAmount');
+  amtEl.textContent = (up ? '+$' : '−$') + Math.abs(diffAmt).toLocaleString('en-US', {
+    maximumFractionDigits: 0
+  });
+
+  // Build chart data
+  var data = series.map(function(p) { return { x: p[0], y: p[1] }; });
+  var lineColor = up ? 'rgba(34, 197, 94, 0.95)' : 'rgba(239, 68, 68, 0.95)';
+  var fillRgb = up ? '34, 197, 94' : '239, 68, 68';
+
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js not loaded yet');
+    return;
+  }
+
+  if (btcChartInstance) {
+    btcChartInstance.destroy();
+  }
+  btcChartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      datasets: [{
+        data: data,
+        borderColor: lineColor,
+        backgroundColor: function(ctx) {
+          var chart = ctx.chart;
+          var area = chart.chartArea;
+          if (!area) return null;
+          var grad = chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+          grad.addColorStop(0, 'rgba(' + fillRgb + ', 0.22)');
+          grad.addColorStop(1, 'rgba(' + fillRgb + ', 0)');
+          return grad;
+        },
+        fill: true,
+        borderWidth: 1.5,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        tension: 0.08,
+        parsing: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 250 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          borderColor: 'rgba(255, 255, 255, 0.1)',
+          borderWidth: 1,
+          titleColor: '#ffffff',
+          bodyColor: '#ffffff',
+          padding: 10,
+          displayColors: false,
+          callbacks: {
+            title: function(items) {
+              var ts = items[0].parsed.x;
+              var dt = new Date(ts);
+              return dt.toLocaleString('en-US', {
+                year: 'numeric', month: 'short', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+              });
+            },
+            label: function(item) {
+              return '$' + item.parsed.y.toLocaleString('en-US', {
+                maximumFractionDigits: 2
+              });
+            }
+          }
+        },
+        decimation: { enabled: true, algorithm: 'lttb', samples: 250 }
+      },
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            tooltipFormat: 'PPpp',
+            displayFormats: {
+              hour: 'MMM d HH:mm',
+              day: 'MMM d',
+              month: 'MMM yy',
+              year: 'yyyy'
+            }
+          },
+          ticks: { maxTicksLimit: 6, color: '#71717a', font: { size: 10 } },
+          grid: { color: 'rgba(255, 255, 255, 0.04)' }
+        },
+        y: {
+          ticks: {
+            color: '#71717a',
+            font: { size: 10 },
+            callback: function(v) {
+              if (Math.abs(v) >= 1000) {
+                return '$' + (v / 1000).toFixed(1) + 'k';
+              }
+              return '$' + Number(v).toFixed(0);
+            }
+          },
+          grid: { color: 'rgba(255, 255, 255, 0.04)' }
+        }
+      },
+      interaction: { intersect: false, mode: 'nearest', axis: 'x' }
+    }
+  });
 }
 
 // ============================================================
@@ -1085,6 +1358,8 @@ document.addEventListener('DOMContentLoaded', function() {
   initNavigation();
   loadData();
   loadNodeData();
+  loadBtcChart();
   setInterval(loadData, REFRESH_INTERVAL);
   setInterval(loadNodeData, REFRESH_INTERVAL);
+  setInterval(loadBtcChart, REFRESH_INTERVAL);
 });

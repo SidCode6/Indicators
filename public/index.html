@@ -8,6 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <!-- Chart.js + date-fns adapter for the BTC chart (Phase 4) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js" defer></script>
 </head>
 <body>
   <!-- NAVIGATION -->
@@ -68,7 +71,27 @@
           </div>
         </div>
 
-        <!-- Phase 4 will insert: BTC price chart + ticker cards (MSTR/ASST/STRC/SATA) here -->
+        <!-- BTC Price Chart (Phase 4) -->
+        <div class="btc-chart-section">
+          <div class="chart-header">
+            <div class="chart-stats">
+              <span class="chart-tf-label" id="chartTfLabel">--</span>
+              <span class="chart-tf-change" id="chartTfChange">--</span>
+              <span class="chart-tf-amount" id="chartTfAmount">--</span>
+            </div>
+            <div class="chart-timeframes" id="chartTimeframes">
+              <!-- Buttons injected by JS -->
+            </div>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="btcChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Ticker Cards: MSTR / ASST / STRC / SATA (Phase 4) -->
+        <div class="ticker-row" id="tickerRow">
+          <!-- Cards injected by JS -->
+        </div>
 
         <!-- Market Metrics: S&P 500, NASDAQ 100, Gold, Oil, DXY, USDINR -->
         <div class="market-section">

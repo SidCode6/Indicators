@@ -253,6 +253,160 @@ img, svg {
   margin-bottom: 2.5rem;
 }
 
+/* ============================================================
+   BTC CHART (Phase 4)
+   ============================================================ */
+.btc-chart-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.chart-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-family: var(--font-mono);
+}
+
+.chart-tf-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.chart-tf-change {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.chart-tf-change.up { color: var(--green); }
+.chart-tf-change.down { color: var(--red); }
+
+.chart-tf-amount {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.chart-timeframes {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.chart-tf-btn {
+  padding: 0.3125rem 0.625rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: var(--font-body);
+}
+
+.chart-tf-btn:hover {
+  border-color: #555555;
+  color: var(--text-primary);
+}
+
+.chart-tf-btn.active {
+  background: var(--text-primary);
+  color: #000000;
+  border-color: var(--text-primary);
+  font-weight: 600;
+}
+
+.chart-canvas-wrap {
+  position: relative;
+  height: 280px;
+}
+
+@media (min-width: 768px) {
+  .chart-canvas-wrap { height: 340px; }
+}
+
+/* ============================================================
+   TICKER CARDS (Phase 4): MSTR / ASST / STRC / SATA
+   ============================================================ */
+.ticker-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+
+@media (min-width: 768px) {
+  .ticker-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.ticker-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ticker-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.ticker-symbol {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.ticker-name {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: right;
+}
+
+.ticker-price {
+  font-family: var(--font-mono);
+  font-size: 1.375rem;
+  font-weight: 700;
+  margin-top: 0.125rem;
+}
+
+.ticker-change {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.ticker-change.up { color: var(--green); }
+.ticker-change.down { color: var(--red); }
+.ticker-change.flat { color: var(--text-muted); }
+
 .section-intro {
   margin-bottom: 3rem;
 }

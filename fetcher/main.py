@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 # Add parent directory to path so we can run from anywhere
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from sources import coingecko, blockchain, fear_greed, fred, yahoo, etf_flows, tickers
+from sources import coingecko, blockchain, fear_greed, fred, yahoo, etf_flows, tickers, btc_chart
 
 
 # Paths relative to this script's location
@@ -249,7 +249,7 @@ def main():
 
     # --- User-watchlist tickers (MSTR/ASST/STRC/SATA) ---
     try:
-        print("\n[7/7] Fetching user ticker prices...")
+        print("\n[7/8] Fetching user ticker prices...")
         ticker_data = tickers.fetch()
         if ticker_data:
             results["tickers"] = ticker_data
@@ -259,6 +259,22 @@ def main():
         else:
             fail_count += 1
             print("  FAILED: Tickers returned None")
+    except Exception as e:
+        fail_count += 1
+        print(f"  FAILED: {e}")
+
+    # --- BTC Chart Data (intraday + daily series for the chart widget) ---
+    try:
+        print("\n[8/8] Fetching BTC chart data...")
+        chart_payload = btc_chart.fetch()
+        if chart_payload:
+            btc_chart.write(chart_payload)
+            success_count += 1
+            print(f"  OK: BTC chart ({len(chart_payload.get('intraday', []))} intraday "
+                  f"+ {len(chart_payload.get('daily', []))} daily points)")
+        else:
+            fail_count += 1
+            print("  FAILED: BTC chart data unavailable")
     except Exception as e:
         fail_count += 1
         print(f"  FAILED: {e}")
