@@ -2,6 +2,12 @@
 """
 Main fetcher script for Bitcoin/Macro dashboard.
 Fetches data from all sources and writes public/data.json.
+
+Stale-value fallback: when a fetch fails entirely (or returns all-null leaves),
+the prior values from previous_data.json are reused for that sub-block. This
+prevents transient API failures (most often CoinGecko rate-limiting from
+Railway's shared IPs) from blanking the dashboard. The fallback is applied at
+the FINAL data assembly step, after all fetchers have run.
 """
 
 import json
@@ -12,7 +18,7 @@ from datetime import datetime, timezone
 # Add parent directory to path so we can run from anywhere
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from sources import coingecko, blockchain, fear_greed, fred, yahoo, etf_flows
+from sources import coingecko, blockchain, fear_greed, fred, yahoo, etf_flows, tickers
 
 
 # Paths relative to this script's location
@@ -22,8 +28,59 @@ DATA_JSON_PATH = os.path.join(PROJECT_DIR, "public", "data.json")
 PREVIOUS_DATA_PATH = os.path.join(SCRIPT_DIR, "previous_data.json")
 
 
+# ----- Stale-value fallback ------------------------------------------------
+
+# Top-level keys that should NEVER be substituted from previous_data — they're
+# either metadata about THIS run, or rebuilt every time.
+NEVER_FALLBACK = {"last_updated"}
+
+
+def _is_all_null(obj):
+    """Recursively True if every leaf in obj is None (or obj itself is None).
+
+    Empty containers are considered "all null" — if a fetcher returned an
+    empty dict it almost certainly means the API failed.
+    """
+    if obj is None:
+        return True
+    if isinstance(obj, dict):
+        return all(_is_all_null(v) for v in obj.values())
+    if isinstance(obj, list):
+        return all(_is_all_null(v) for v in obj)
+    return False
+
+
+def _fill_nulls_from_previous(new_data, prev_data, path=""):
+    """Recursively merge prev_data into new_data wherever new_data has a
+    null/empty subtree.
+
+    - If new[k] is all-null and prev[k] has data, substitute the whole subtree.
+    - If both are dicts, recurse.
+    - Otherwise keep new[k].
+
+    Returns a fresh dict (does not mutate new_data).
+    """
+    if not isinstance(new_data, dict) or not isinstance(prev_data, dict):
+        return new_data
+
+    out = {}
+    for k, v in new_data.items():
+        if k in NEVER_FALLBACK or k not in prev_data:
+            out[k] = v
+            continue
+        prev_v = prev_data[k]
+        if _is_all_null(v) and not _is_all_null(prev_v):
+            out[k] = prev_v
+            print(f"  [stale-fallback] {path}{k} reused from previous_data.json")
+        elif isinstance(v, dict) and isinstance(prev_v, dict):
+            out[k] = _fill_nulls_from_previous(v, prev_v, path=f"{path}{k}.")
+        else:
+            out[k] = v
+    return out
+
+
 def load_previous_data():
-    """Load previously saved data for computing deltas."""
+    """Load previously saved data for stale-value fallback."""
     try:
         if os.path.exists(PREVIOUS_DATA_PATH):
             with open(PREVIOUS_DATA_PATH, "r") as f:
@@ -34,13 +91,15 @@ def load_previous_data():
 
 
 def save_previous_data(data):
-    """Save current data for future delta computation."""
+    """Save current data for the next run's stale-value fallback."""
     try:
         with open(PREVIOUS_DATA_PATH, "w") as f:
             json.dump(data, f, indent=2)
     except Exception as e:
         print(f"[main] Warning: Could not save previous data: {e}")
 
+
+# ----- ETF Flows enrichment (unchanged) ------------------------------------
 
 ETF_PROVIDERS = {
     "IBIT": "BlackRock", "FBTC": "Fidelity", "BITB": "Bitwise",
@@ -70,6 +129,25 @@ def _enrich_etf_flows(etf_data):
     }
 
 
+def _yahoo_value(yahoo_results, name):
+    """Pull a scalar value from yahoo's new ``current`` dict shape (each
+    asset is {value, change_value, change_pct})."""
+    cur = (yahoo_results.get("current") or {}).get(name)
+    if isinstance(cur, dict):
+        return cur.get("value")
+    return None
+
+
+def _yahoo_change(yahoo_results, name):
+    """Pull the % change from yahoo's new ``current`` dict shape."""
+    cur = (yahoo_results.get("current") or {}).get(name)
+    if isinstance(cur, dict):
+        return cur.get("change_pct")
+    return None
+
+
+# ----- Main orchestration --------------------------------------------------
+
 def main():
     print("=" * 50)
     print(f"Fetcher started at {datetime.now(timezone.utc).isoformat()}")
@@ -81,7 +159,7 @@ def main():
 
     # --- CoinGecko: Bitcoin + Stablecoins ---
     try:
-        print("\n[1/6] Fetching CoinGecko data...")
+        print("\n[1/7] Fetching CoinGecko data...")
         cg_data = coingecko.fetch()
         if cg_data:
             results["coingecko"] = cg_data
@@ -96,7 +174,7 @@ def main():
 
     # --- Blockchain.info: Block Height ---
     try:
-        print("\n[2/6] Fetching block height...")
+        print("\n[2/7] Fetching block height...")
         bc_data = blockchain.fetch()
         if bc_data:
             results["blockchain"] = bc_data
@@ -111,7 +189,7 @@ def main():
 
     # --- Fear & Greed Index ---
     try:
-        print("\n[3/6] Fetching Fear & Greed Index...")
+        print("\n[3/7] Fetching Fear & Greed Index...")
         fg_data = fear_greed.fetch()
         if fg_data:
             results["fear_greed"] = fg_data
@@ -124,15 +202,14 @@ def main():
         fail_count += 1
         print(f"  FAILED: {e}")
 
-    # --- Macro Data (free APIs, no key needed) ---
+    # --- Macro Data (FRED + treasuries) ---
     try:
-        print("\n[4/6] Fetching macro economic data...")
+        print("\n[4/7] Fetching macro economic data...")
         fred_data = fred.fetch()
         if fred_data:
             results["fred"] = fred_data
             success_count += 1
-            fetched_series = ", ".join(fred_data.keys())
-            print(f"  OK: Series fetched: {fetched_series}")
+            print(f"  OK: Series fetched: {', '.join(fred_data.keys())}")
         else:
             fail_count += 1
             print("  FAILED: Macro data returned None")
@@ -140,14 +217,14 @@ def main():
         fail_count += 1
         print(f"  FAILED: {e}")
 
-    # --- Yahoo Finance: Asset Prices & Returns ---
+    # --- Yahoo Finance: Equities + FX + Crypto histories ---
     try:
-        print("\n[5/6] Fetching Yahoo Finance data...")
+        print("\n[5/7] Fetching Yahoo Finance data...")
         yahoo_data = yahoo.fetch()
         if yahoo_data:
             results["yahoo"] = yahoo_data
             success_count += 1
-            print(f"  OK: Assets: {list(yahoo_data.get('current', {}).keys())}")
+            print(f"  OK: Assets: {list((yahoo_data.get('current') or {}).keys())}")
         else:
             fail_count += 1
             print("  FAILED: Yahoo returned None")
@@ -157,7 +234,7 @@ def main():
 
     # --- ETF Flows ---
     try:
-        print("\n[6/6] Fetching ETF flow data...")
+        print("\n[6/7] Fetching ETF flow data...")
         etf_data = etf_flows.fetch()
         if etf_data:
             results["etf_flows"] = etf_data
@@ -170,6 +247,22 @@ def main():
         fail_count += 1
         print(f"  FAILED: {e}")
 
+    # --- User-watchlist tickers (MSTR/ASST/STRC/SATA) ---
+    try:
+        print("\n[7/7] Fetching user ticker prices...")
+        ticker_data = tickers.fetch()
+        if ticker_data:
+            results["tickers"] = ticker_data
+            ok_tickers = [k for k, v in ticker_data.items() if v is not None]
+            success_count += 1
+            print(f"  OK: Tickers with data: {ok_tickers}")
+        else:
+            fail_count += 1
+            print("  FAILED: Tickers returned None")
+    except Exception as e:
+        fail_count += 1
+        print(f"  FAILED: {e}")
+
     # --- Assemble final data.json ---
     print("\n" + "=" * 50)
     print("Assembling data.json...")
@@ -177,86 +270,122 @@ def main():
     cg = results.get("coingecko", {})
     fred_results = results.get("fred", {})
     yahoo_results = results.get("yahoo", {})
+    ticker_results = results.get("tickers", {})
 
     data = {
         "last_updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
 
-        # Bitcoin
+        # Bitcoin (CoinGecko)
         "bitcoin": cg.get("bitcoin", {
             "price_usd": None,
             "change_24h_pct": None,
             "market_cap": None,
         }),
 
-        # Block height
+        # Block height (Blockchain.info) — kept in data even though not rendered
         "block_height": results.get("blockchain", {}).get("block_height", None),
 
-        # Fear & Greed
+        # Fear & Greed — kept in data even though not rendered after Phase 1
         "fear_greed": results.get("fear_greed", {
             "value": None,
             "classification": None,
         }),
 
-        # Macro indicators from FRED + Yahoo
+        # ---- LEGACY macro block (kept so the existing UI keeps working
+        # until Phase 3 rebuilds the macro grid against the new shape) ----
         "macro": {
             "dxy": {
-                "value": yahoo_results.get("current", {}).get("DXY", None),
-                "change": None,
+                "value": _yahoo_value(yahoo_results, "DXY"),
+                "change": _yahoo_change(yahoo_results, "DXY"),
                 "date": None,
             },
             "fed_funds_rate": {
-                "value": fred_results.get("FEDFUNDS", {}).get("value", None),
-                "change": fred_results.get("FEDFUNDS", {}).get("change", None),
-                "date": fred_results.get("FEDFUNDS", {}).get("date", None),
+                "value": fred_results.get("FEDFUNDS", {}).get("value"),
+                "change": fred_results.get("FEDFUNDS", {}).get("change"),
+                "date": fred_results.get("FEDFUNDS", {}).get("date"),
             },
             "treasury_10y": {
-                "value": fred_results.get("DGS10", {}).get("value", None),
-                "change": fred_results.get("DGS10", {}).get("change", None),
-                "date": fred_results.get("DGS10", {}).get("date", None),
+                "value": fred_results.get("DGS10", {}).get("value"),
+                "change": fred_results.get("DGS10", {}).get("change"),
+                "date": fred_results.get("DGS10", {}).get("date"),
             },
             "cpi": {
-                "value": fred_results.get("CPIAUCSL", {}).get("value", None),
-                "change": fred_results.get("CPIAUCSL", {}).get("change", None),
-                "date": fred_results.get("CPIAUCSL", {}).get("date", None),
+                "value": fred_results.get("CPIAUCSL", {}).get("value"),
+                "change": fred_results.get("CPIAUCSL", {}).get("change"),
+                "date": fred_results.get("CPIAUCSL", {}).get("date"),
             },
             "sp500": {
-                "value": yahoo_results.get("current", {}).get("SP500", None),
-                "change": None,
+                "value": _yahoo_value(yahoo_results, "SP500"),
+                "change": _yahoo_change(yahoo_results, "SP500"),
                 "date": None,
             },
         },
 
-        # Debt indicators from FRED
+        # ---- LEGACY debt block (kept for current UI until Phase 3) ----
         "debt": {
             "national_debt": {
-                "value": fred_results.get("GFDEBTN", {}).get("value", None),
-                "change": fred_results.get("GFDEBTN", {}).get("change", None),
-                "date": fred_results.get("GFDEBTN", {}).get("date", None),
+                "value": fred_results.get("GFDEBTN", {}).get("value"),
+                "change": fred_results.get("GFDEBTN", {}).get("change"),
+                "date": fred_results.get("GFDEBTN", {}).get("date"),
             },
             "debt_to_gdp": {
-                "value": fred_results.get("GFDEGDQ188S", {}).get("value", None),
-                "change": fred_results.get("GFDEGDQ188S", {}).get("change", None),
-                "date": fred_results.get("GFDEGDQ188S", {}).get("date", None),
+                "value": fred_results.get("GFDEGDQ188S", {}).get("value"),
+                "change": fred_results.get("GFDEGDQ188S", {}).get("change"),
+                "date": fred_results.get("GFDEGDQ188S", {}).get("date"),
             },
             "deficit": {
-                "value": fred_results.get("FYFSD", {}).get("value", None),
-                "change": fred_results.get("FYFSD", {}).get("change", None),
-                "date": fred_results.get("FYFSD", {}).get("date", None),
+                "value": fred_results.get("FYFSD", {}).get("value"),
+                "change": fred_results.get("FYFSD", {}).get("change"),
+                "date": fred_results.get("FYFSD", {}).get("date"),
             },
         },
 
-        # Stablecoins
+        # Stablecoins (CoinGecko) — data kept in case the Liquidity UI is restored
         "stablecoins": cg.get("stablecoins", {
             "usdt": {"total_supply": None, "market_cap": None},
             "usdc": {"total_supply": None, "market_cap": None},
         }),
 
-        # ETF Flows (add provider names)
+        # ETF Flows (with provider names) — also data-only after Phase 1
         "etf_flows": _enrich_etf_flows(results.get("etf_flows")),
 
-        # Asset Returns
-        "asset_returns": yahoo_results.get("asset_returns", {}),
+        # ---- NEW PHASE 2 BLOCKS ----
+
+        # Market metrics that Phase 3 will render as the new metric grid.
+        # Each value is {value, change_value, change_pct} from Yahoo.
+        "equities": {
+            name: (yahoo_results.get("current") or {}).get(name)
+            for name in ("SP500", "NASDAQ100", "GOLD", "OIL", "DXY", "USDINR")
+        },
+
+        # New Debt & Credit metrics (Phase 3 will render these).
+        "treasuries": {
+            "DGS2":  fred_results.get("DGS2"),
+            "DGS10": fred_results.get("DGS10"),
+            "DGS30": fred_results.get("DGS30"),
+            "DTB3":  fred_results.get("DTB3"),
+        },
+
+        # User-watchlist ticker prices (Phase 4 will render under the BTC chart).
+        "tickers": {
+            sym: ticker_results.get(sym) for sym in ("MSTR", "ASST", "STRC", "SATA")
+        },
+
+        # Asset Returns (BTC vs Assets section). Yahoo now computes returns
+        # for every ticker (so they're available for the new chart/metrics),
+        # but the BTC-vs-Assets ranking is intentionally limited to the same
+        # three assets it has always compared. Extending that view is a
+        # separate UX decision; not changing it here.
+        "asset_returns": {
+            tf: {sym: v for sym, v in vals.items() if sym in ("BTC", "GOLD", "SP500")}
+            for tf, vals in (yahoo_results.get("asset_returns") or {}).items()
+        },
     }
+
+    # --- Stale-value fallback: substitute any all-null sub-block from previous ---
+    previous = load_previous_data()
+    if previous:
+        data = _fill_nulls_from_previous(data, previous)
 
     # Ensure public directory exists
     os.makedirs(os.path.dirname(DATA_JSON_PATH), exist_ok=True)
@@ -266,10 +395,9 @@ def main():
         json.dump(data, f, indent=2)
     print(f"Wrote {DATA_JSON_PATH}")
 
-    # Save for future delta computation
+    # Save the (post-fallback) snapshot for the next run's fallback baseline
     save_previous_data(data)
 
-    # Summary
     print(f"\nDone: {success_count} succeeded, {fail_count} failed")
     print("=" * 50)
 

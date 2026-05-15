@@ -3,7 +3,7 @@ Macro economic data from FREE public APIs (no API key needed).
 
 Sources:
 - Fed Funds Rate: NY Fed API
-- 10Y Treasury Yield: yfinance (^TNX)
+- Treasury Yields (2Y, 10Y, 30Y, 3-month): yfinance ^TNX/^TYX/^IRX + FRED CSV for 2Y
 - CPI / Inflation: BLS API v1
 - National Debt: Treasury Fiscal Data API
 - Debt-to-GDP: World Bank + Treasury
@@ -12,6 +12,68 @@ Sources:
 
 import requests
 import yfinance as yf
+
+
+def _fetch_yahoo_yield(symbol, label):
+    """Generic Yahoo yield fetcher — used for ^TNX (10Y), ^TYX (30Y), ^IRX (3M T-bill)."""
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period="5d")
+        if hist.empty:
+            return None
+        current = float(hist["Close"].iloc[-1])
+        previous = float(hist["Close"].iloc[-2]) if len(hist) > 1 else None
+        change = round(current - previous, 4) if previous is not None else None
+        return {
+            "value": round(current, 2),
+            "change": change,
+            "date": str(hist.index[-1].date()),
+        }
+    except Exception as e:
+        print(f"[macro] {label} ({symbol}) error: {e}")
+        return None
+
+
+def _fetch_fred_csv(series_id):
+    """Pull a FRED series via the public CSV graph endpoint (no key needed).
+
+    Returns latest observation + change vs prior observation.
+    """
+    try:
+        url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+        resp = requests.get(
+            url,
+            timeout=15,
+            headers={"User-Agent": "Indicators-Dashboard/1.0"},
+        )
+        resp.raise_for_status()
+        lines = resp.text.strip().split("\n")
+        if len(lines) < 2:
+            return None
+        rows = []
+        for line in lines[1:]:
+            parts = line.split(",")
+            if len(parts) != 2:
+                continue
+            date, value = parts[0].strip(), parts[1].strip()
+            if value and value != ".":
+                try:
+                    rows.append((date, float(value)))
+                except ValueError:
+                    continue
+        if not rows:
+            return None
+        date, current = rows[-1]
+        previous = rows[-2][1] if len(rows) > 1 else None
+        change = round(current - previous, 4) if previous is not None else None
+        return {
+            "value": round(current, 2),
+            "change": change,
+            "date": date,
+        }
+    except Exception as e:
+        print(f"[fred-csv] {series_id} error: {e}")
+        return None
 
 
 def _fetch_fed_funds_rate():
@@ -37,22 +99,8 @@ def _fetch_fed_funds_rate():
 
 
 def _fetch_treasury_10y():
-    """Fetch 10-Year Treasury Yield from Yahoo Finance."""
-    try:
-        ticker = yf.Ticker("^TNX")
-        hist = ticker.history(period="5d")
-        if not hist.empty:
-            current = float(hist["Close"].iloc[-1])
-            previous = float(hist["Close"].iloc[-2]) if len(hist) > 1 else None
-            change = round(current - previous, 4) if previous else None
-            return {
-                "value": round(current, 2),
-                "change": change,
-                "date": str(hist.index[-1].date()),
-            }
-    except Exception as e:
-        print(f"[macro] 10Y Treasury error: {e}")
-    return None
+    """10-Year Treasury Yield from Yahoo (^TNX)."""
+    return _fetch_yahoo_yield("^TNX", "10Y Treasury")
 
 
 def _fetch_cpi():
@@ -195,11 +243,29 @@ def fetch():
             results["FEDFUNDS"] = ffr
             print(f"  [macro] Fed Funds Rate: {ffr['value']}%")
 
-        # 10Y Treasury
+        # 2Y Treasury (FRED CSV — Yahoo doesn't expose a 2Y ticker)
+        t2y = _fetch_fred_csv("DGS2")
+        if t2y:
+            results["DGS2"] = t2y
+            print(f"  [macro] 2Y Treasury: {t2y['value']}%")
+
+        # 10Y Treasury (Yahoo ^TNX)
         t10y = _fetch_treasury_10y()
         if t10y:
             results["DGS10"] = t10y
             print(f"  [macro] 10Y Treasury: {t10y['value']}%")
+
+        # 30Y Treasury (Yahoo ^TYX)
+        t30y = _fetch_yahoo_yield("^TYX", "30Y Treasury")
+        if t30y:
+            results["DGS30"] = t30y
+            print(f"  [macro] 30Y Treasury: {t30y['value']}%")
+
+        # 3-Month T-Bill (Yahoo ^IRX, technically 13-week)
+        t3m = _fetch_yahoo_yield("^IRX", "3M T-Bill")
+        if t3m:
+            results["DTB3"] = t3m
+            print(f"  [macro] 3M T-Bill: {t3m['value']}%")
 
         # CPI / Inflation
         cpi = _fetch_cpi()
