@@ -114,10 +114,6 @@
     <!-- SECTION 2: BTC VS ASSETS -->
     <section id="assets" class="section">
       <div class="container">
-        <div class="section-intro text-center">
-          <h2 class="section-title">BTC vs Assets</h2>
-          <p class="section-subtitle">How Bitcoin stacks up against traditional assets</p>
-        </div>
         <div class="container-narrow">
           <div class="assets-card">
             <div class="timeframe-buttons" id="timeframeButtons">
@@ -129,6 +125,17 @@
             <div class="assets-footer" id="assetsFooter">
               <!-- Summary text -->
             </div>
+          </div>
+
+          <!-- Quick Compare: opens a StockAnalysis comparison page in a new tab -->
+          <div class="compare-card">
+            <h3 class="compare-title">Compare Anything</h3>
+            <p class="compare-desc">Open any ticker combination on StockAnalysis. Type 2+ tickers or company names separated by commas, spaces, or "vs".</p>
+            <div class="compare-input-row">
+              <input type="text" id="compareInput" placeholder="e.g. MSTR, TSLA, AAPL" autocomplete="off" spellcheck="false" />
+              <button type="button" id="compareBtn" class="compare-btn">Compare →</button>
+            </div>
+            <div class="compare-preview" id="comparePreview"></div>
           </div>
         </div>
       </div>

@@ -1327,6 +1327,122 @@ function getAssetIcon(symbol) {
 }
 
 // ============================================================
+// QUICK COMPARE — generates a StockAnalysis comparison URL from user input
+// ============================================================
+
+// Common company-name / nickname / index aliases -> ticker recognised by
+// StockAnalysis. Opinionated: if a name isn't here we pass the input
+// through verbatim, so any exact ticker will work too.
+var COMPANY_TO_TICKER = {
+  // Mega caps
+  'TESLA': 'TSLA', 'APPLE': 'AAPL', 'MICROSOFT': 'MSFT',
+  'GOOGLE': 'GOOGL', 'ALPHABET': 'GOOGL', 'AMAZON': 'AMZN',
+  'NVIDIA': 'NVDA', 'META': 'META', 'FACEBOOK': 'META',
+  'NETFLIX': 'NFLX', 'BERKSHIRE': 'BRK.B',
+  // BTC ecosystem
+  'STRATEGY': 'MSTR', 'MICROSTRATEGY': 'MSTR',
+  'STRIVE': 'ASST',
+  'COINBASE': 'COIN', 'ROBINHOOD': 'HOOD',
+  'BLOCK': 'XYZ', 'SQUARE': 'XYZ',
+  'CIRCLE': 'CRCL', 'GALAXY': 'GLXY',
+  // BTC miners
+  'MARATHON': 'MARA', 'CLEANSPARK': 'CLSK',
+  'HUT': 'HUT', 'HUT8': 'HUT', 'CIPHER': 'CIFR',
+  'TERAWULF': 'WULF', 'BITDEER': 'BTDR',
+  'CORE SCIENTIFIC': 'CORZ',
+  // Crypto / commodity keywords -> popular ETF proxies (StockAnalysis is
+  // primarily stocks/ETFs; raw crypto symbols often won't resolve there).
+  'BITCOIN': 'IBIT', 'BTC': 'IBIT',
+  'ETHEREUM': 'ETHA', 'ETH': 'ETHA',
+  'SOLANA': 'SOL',
+  'GOLD': 'GLD', 'SILVER': 'SLV', 'OIL': 'USO',
+  // Indices -> popular ETF proxies
+  'SP500': 'SPY', 'S&P': 'SPY', 'S&P500': 'SPY', 'SPX': 'SPY',
+  'NASDAQ': 'QQQ', 'NASDAQ100': 'QQQ', 'NDX': 'QQQ',
+  'DOW': 'DIA', 'DJIA': 'DIA',
+  'RUSSELL': 'IWM', 'RUSSELL2000': 'IWM',
+  // Misc popular names
+  'PALANTIR': 'PLTR', 'ORACLE': 'ORCL',
+  'INTEL': 'INTC', 'JPM': 'JPM', 'JPMORGAN': 'JPM',
+  'VISA': 'V', 'MASTERCARD': 'MA',
+  'DISNEY': 'DIS', 'WALMART': 'WMT'
+};
+
+function _normalizeCompareTicker(raw) {
+  var s = (raw || '').trim().toUpperCase();
+  if (!s) return null;
+  if (s.charAt(0) === '$') s = s.slice(1);  // strip "$" prefix
+  return COMPANY_TO_TICKER[s] || s;
+}
+
+function parseCompareInput(raw) {
+  if (!raw) return [];
+  // Split on commas, semicolons, plus signs, whitespace, or "vs" tokens
+  var parts = raw.split(/[,;+]+|\s+vs\s+|\s+/i)
+    .map(function(p) { return p.trim(); })
+    .filter(Boolean);
+  var tickers = parts.map(_normalizeCompareTicker).filter(Boolean);
+  // Dedupe while preserving order
+  var seen = {};
+  return tickers.filter(function(t) {
+    if (seen[t]) return false;
+    seen[t] = true;
+    return true;
+  });
+}
+
+function buildCompareUrl(tickers) {
+  if (!tickers || tickers.length < 2) return null;
+  // StockAnalysis URL convention: lowercase, joined by "-vs-"
+  var slug = tickers.map(function(t) { return t.toLowerCase(); }).join('-vs-');
+  return 'https://stockanalysis.com/stocks/compare/' + slug + '/';
+}
+
+function initCompareCard() {
+  var input = document.getElementById('compareInput');
+  var btn = document.getElementById('compareBtn');
+  var preview = document.getElementById('comparePreview');
+  if (!input || !btn || !preview) return;
+
+  function updatePreview() {
+    var tickers = parseCompareInput(input.value);
+    var url = buildCompareUrl(tickers);
+    if (tickers.length === 0) {
+      preview.innerHTML = '<span class="text-muted">Type 2+ tickers or company names to build a comparison URL.</span>';
+      btn.disabled = true;
+    } else if (tickers.length === 1) {
+      preview.innerHTML = 'Resolved: <span class="resolved">' +
+        escapeHtml(tickers[0]) + '</span>. Add one more to compare.';
+      btn.disabled = true;
+    } else {
+      var safeUrl = escapeHtml(url);
+      preview.innerHTML =
+        'Resolved: <span class="resolved">' +
+        tickers.map(escapeHtml).join(' · ') + '</span><br>' +
+        '<a href="' + safeUrl + '" target="_blank" rel="noopener">' + safeUrl + '</a>';
+      btn.disabled = false;
+    }
+  }
+
+  function openCompare() {
+    var tickers = parseCompareInput(input.value);
+    var url = buildCompareUrl(tickers);
+    if (url) window.open(url, '_blank', 'noopener');
+  }
+
+  input.addEventListener('input', updatePreview);
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      openCompare();
+    }
+  });
+  btn.addEventListener('click', openCompare);
+
+  updatePreview();
+}
+
+// ============================================================
 // NAVIGATION
 // ============================================================
 
@@ -1392,6 +1508,7 @@ function initNavigation() {
 
 document.addEventListener('DOMContentLoaded', function() {
   initNavigation();
+  initCompareCard();
   loadData();
   loadNodeData();
   loadBtcChart();

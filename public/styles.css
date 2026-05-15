@@ -271,6 +271,113 @@ img, svg {
 }
 
 /* ============================================================
+   QUICK COMPARE (BTC vs Assets tab) — passes through to StockAnalysis
+   ============================================================ */
+.compare-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  margin-top: 1.25rem;
+}
+
+.compare-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.compare-desc {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.compare-input-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-direction: column;
+}
+
+@media (min-width: 600px) {
+  .compare-input-row {
+    flex-direction: row;
+  }
+}
+
+#compareInput {
+  flex: 1;
+  background: #18181b;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+  width: 100%;
+}
+
+#compareInput:focus {
+  border-color: var(--text-primary);
+}
+
+#compareInput::placeholder {
+  color: #52525b;
+}
+
+.compare-btn {
+  background: var(--text-primary);
+  color: #000000;
+  border: 1px solid var(--text-primary);
+  border-radius: var(--radius-lg);
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.compare-btn:hover {
+  background: #e4e4e7;
+  border-color: #e4e4e7;
+}
+
+.compare-btn:disabled {
+  background: #3f3f46;
+  color: #71717a;
+  border-color: #3f3f46;
+  cursor: not-allowed;
+}
+
+.compare-preview {
+  margin-top: 0.875rem;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.compare-preview .resolved {
+  color: var(--text-primary);
+}
+
+.compare-preview a {
+  color: #93c5fd;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.compare-preview a:hover {
+  color: #bfdbfe;
+}
+
+/* ============================================================
    BTC CHART (Phase 4)
    ============================================================ */
 .btc-chart-section {
