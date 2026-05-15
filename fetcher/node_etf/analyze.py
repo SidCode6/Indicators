@@ -25,7 +25,7 @@ WATCHLIST = [
     {"ticker": "MSTR", "category": "btc_treasury",
      "label": "Strategy Inc — BTC treasury company"},
     {"ticker": "ASST", "category": "btc_treasury",
-     "label": "Asset Entities — BTC treasury company"},
+     "label": "Strive Inc — BTC treasury company"},
     {"ticker": "STRC", "category": "btc_treasury",
      "label": "Strategy preferred (Stretch Perpetual Preferred)"},
 ]

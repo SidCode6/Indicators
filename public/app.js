@@ -2,7 +2,7 @@
 // CONFIGURATION
 // ============================================================
 
-const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes
 const TIMEFRAMES = ['1M', '3M', '6M', '1Y', '3Y', '5Y'];
 let currentTimeframe = '1Y';
 let dashboardData = null;
@@ -584,13 +584,9 @@ function renderBitcoinHero() {
   var amtEl = document.getElementById('btcChangeAmt');
   if (btc.change_24h_pct != null && btc.price_usd != null) {
     var changeAmt = btc.price_usd * (btc.change_24h_pct / 100) / (1 + btc.change_24h_pct / 100);
-    amtEl.textContent = formatCurrency(Math.abs(changeAmt), 0);
+    var sign = btc.change_24h_pct >= 0 ? '+' : '-';
+    amtEl.textContent = sign + formatCurrency(Math.abs(changeAmt), 0);
     amtEl.className = 'btc-change-amt ' + getChangeClass(btc.change_24h_pct);
-  }
-
-  var blockHeight = dashboardData.block_height;
-  if (blockHeight) {
-    document.getElementById('btcBlockValue').textContent = blockHeight.toLocaleString();
   }
 }
 
@@ -599,12 +595,6 @@ function renderMacroCards() {
   grid.innerHTML = '';
 
   var macroMetrics = [
-    {
-      key: 'fear_greed',
-      data: dashboardData.fear_greed,
-      formatValue: function(d) { return (d && d.value != null) ? d.value + ' \u2014 ' + d.classification : '--'; },
-      getChange: function() { return null; }
-    },
     {
       key: 'dxy',
       data: dashboardData.macro ? dashboardData.macro.dxy : null,
@@ -642,66 +632,19 @@ function renderMacroCards() {
     var change = metric.getChange(metric.data);
 
     var card = document.createElement('div');
-    card.className = 'flip-card fade-in';
-    card.addEventListener('click', function() {
-      card.classList.toggle('flipped');
-    });
+    card.className = 'metric-card fade-in';
 
-    // Build front
     var changeHtml = '';
     if (change != null) {
       changeHtml = '<div class="metric-change ' + getChangeClass(change) + '">' +
         getChangeArrow(change) + ' ' + formatPercent(change) + '</div>';
     }
 
-    // Build back - when indicators
-    var whenUpHtml = '';
-    if (info.whenUp) {
-      whenUpHtml = '<div class="when-indicator up">' +
-        '<span class="arrow text-green">\u2191</span>' +
-        '<div>' +
-        '<p class="label text-green">When Rising:</p>' +
-        '<p class="text">' + escapeHtml(info.whenUp) + '</p>' +
-        '</div></div>';
-    }
-
-    var whenDownHtml = '';
-    if (info.whenDown) {
-      whenDownHtml = '<div class="when-indicator down">' +
-        '<span class="arrow text-red">\u2193</span>' +
-        '<div>' +
-        '<p class="label text-red">When Falling:</p>' +
-        '<p class="text">' + escapeHtml(info.whenDown) + '</p>' +
-        '</div></div>';
-    }
-
-    var sourcesHtml = '';
-    if (info.sources) {
-      sourcesHtml = '<div class="card-back-sources">' +
-        '<p class="sources-label">Source:</p>' +
-        '<p class="sources-text">' + escapeHtml(info.sources.join(', ')) + '</p>' +
-        '</div>';
-    }
-
     card.innerHTML =
-      '<div class="flip-card-inner">' +
-        '<div class="flip-card-front metric-card">' +
-          '<div class="metric-header">' +
-            '<h3 class="metric-name">' + escapeHtml(info.name) + '</h3>' +
-            '<span class="flip-hint">tap to flip</span>' +
-          '</div>' +
-          '<p class="metric-description">' + escapeHtml(info.description) + '</p>' +
-          '<div class="metric-value">' + escapeHtml(metric.formatValue(metric.data)) + '</div>' +
-          changeHtml +
-        '</div>' +
-        '<div class="flip-card-back metric-card">' +
-          '<h3 class="card-back-title">' + escapeHtml(info.name) + ' &amp; Bitcoin</h3>' +
-          '<p class="card-back-explanation">' + escapeHtml(info.btcExplanation) + '</p>' +
-          whenUpHtml +
-          whenDownHtml +
-          sourcesHtml +
-        '</div>' +
-      '</div>';
+      '<h3 class="metric-name">' + escapeHtml(info.name) + '</h3>' +
+      '<p class="metric-description">' + escapeHtml(info.description) + '</p>' +
+      '<div class="metric-value">' + escapeHtml(metric.formatValue(metric.data)) + '</div>' +
+      changeHtml;
 
     grid.appendChild(card);
   });

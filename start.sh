@@ -7,10 +7,10 @@
 echo "=== Initial data fetch ==="
 python3 fetcher/main.py
 
-echo "=== Starting hourly refresh loop ==="
+echo "=== Starting 10-minute refresh loop ==="
 while true; do
-  sleep 3600
-  echo "=== Hourly refresh ==="
+  sleep 600
+  echo "=== 10-minute refresh ==="
   python3 fetcher/main.py
 done &
 
