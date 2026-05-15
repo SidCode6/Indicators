@@ -3,7 +3,7 @@
 For each ticker we publish:
 - current value
 - 24h $ and % change (current close vs prior close)
-- historical returns over 1M / 3M / 6M / 1Y / 3Y / 5Y
+- historical returns over 1M / 3M / 6M / YTD / 1Y / 3Y / 5Y
 
 The BTC row reuses the same history so the front-end chart in Phase 4 can
 draw arbitrary timeframes off ``asset_history.BTC`` without an extra round
@@ -91,7 +91,16 @@ def fetch():
     """Fetch all asset histories and compute current + returns."""
     current = {}
     histories = {}
-    asset_returns = {tf: {} for tf in TIMEFRAMES}
+
+    # YTD isn't a fixed-length window like the others — it's the number of
+    # days since Jan 1 of the current year, recomputed every fetch. Merge it
+    # into the fixed timeframes so returns compute through the same path
+    # (_get_price_at_offset then resolves to the last close on/before Jan 1,
+    # i.e. the prior year-end, which is the standard YTD baseline).
+    _now = datetime.now(timezone.utc)
+    tf_windows = dict(TIMEFRAMES)
+    tf_windows["YTD"] = (_now - datetime(_now.year, 1, 1, tzinfo=timezone.utc)).days
+    asset_returns = {tf: {} for tf in tf_windows}
 
     for name, symbol in TICKERS.items():
         try:
@@ -108,7 +117,7 @@ def fetch():
             print(f"[yahoo] {name} error: {e}")
             continue
 
-    for tf_name, tf_days in TIMEFRAMES.items():
+    for tf_name, tf_days in tf_windows.items():
         for name, hist in histories.items():
             past = _get_price_at_offset(hist, tf_days)
             cur_value = (current.get(name) or {}).get("value")

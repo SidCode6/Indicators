@@ -3,8 +3,8 @@
 // ============================================================
 
 const REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes
-const TIMEFRAMES = ['1M', '3M', '6M', '1Y', '3Y', '5Y'];
-let currentTimeframe = '1Y';
+const TIMEFRAMES = ['1M', '3M', '6M', 'YTD', '1Y', '3Y', '5Y'];
+let currentTimeframe = 'YTD';
 let dashboardData = null;
 let nodeData = null;
 let btcChartData = null;
@@ -333,7 +333,7 @@ var CHART_TIMEFRAMES = [
   { key: '5Y',  source: 'daily',    points: 1825 },
   { key: '10Y', source: 'daily',    points: null } // all daily
 ];
-var currentChartTf = '1M';
+var currentChartTf = '24H';
 
 // ============================================================
 // KALSHI LIVE SPORTS SIDEBAR
@@ -1305,11 +1305,16 @@ function renderAssetComparison() {
   // Subtle date range under the timeframe buttons (e.g. "May 15, 2025 → May 15, 2026")
   var rangeEl = document.getElementById('timeframeRange');
   if (rangeEl) {
-    var TF_DAYS = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365, '3Y': 1095, '5Y': 1825 };
-    var days = TF_DAYS[currentTimeframe];
-    if (days) {
-      var end = new Date();
-      var start = new Date(end.getTime() - days * 86400000);
+    var end = new Date();
+    var start;
+    if (currentTimeframe === 'YTD') {
+      start = new Date(end.getFullYear(), 0, 1); // Jan 1 of the current year
+    } else {
+      var TF_DAYS = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365, '3Y': 1095, '5Y': 1825 };
+      var days = TF_DAYS[currentTimeframe];
+      start = days ? new Date(end.getTime() - days * 86400000) : null;
+    }
+    if (start) {
       var fmt = function(d) {
         return d.toLocaleDateString('en-US', {
           year: 'numeric', month: 'short', day: 'numeric'
@@ -1379,7 +1384,7 @@ function renderAssetComparison() {
   var footer = document.getElementById('assetsFooter');
   var periodMap = {
     '1M': '1 month', '3M': '3 months', '6M': '6 months',
-    '1Y': '1 year', '3Y': '3 years', '5Y': '5 years'
+    'YTD': 'year to date', '1Y': '1 year', '3Y': '3 years', '5Y': '5 years'
   };
   var leader = sorted[0];
   var btcRank = -1;
