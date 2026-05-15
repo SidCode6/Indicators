@@ -48,7 +48,14 @@ from datetime import datetime, timezone
 
 
 API_BASE = "https://api.elections.kalshi.com/trade-api/v2"
-USER_AGENT = "Indicators-Dashboard/1.0 (personal use)"
+# Use a browser-like UA — Kalshi's edge appears to drop requests with
+# non-browser User-Agents from cloud-IP origins (we see 0-byte responses
+# from Railway with "Indicators-Dashboard/1.0" but the same code works
+# fine from a laptop).
+USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FETCHER_DIR = os.path.dirname(SCRIPT_DIR)
@@ -249,10 +256,35 @@ SPORT_LABEL_RULES = [
 ]
 
 
-def _http_get_json(url: str, timeout: int = 25) -> dict:
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return json.loads(r.read())
+def _http_get_json(url: str, timeout: int = 25, retries: int = 3) -> dict:
+    """GET JSON with retry/backoff on 429. Kalshi's edge is aggressive
+    about rate-limiting bursty traffic — small backoffs let us coexist
+    cleanly with the 1-minute refresh loop."""
+    last_err: Exception | None = None
+    for attempt in range(retries + 1):
+        try:
+            req = urllib.request.Request(url, headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Origin": "https://kalshi.com",
+                "Referer": "https://kalshi.com/",
+            })
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            last_err = e
+            if e.code == 429 and attempt < retries:
+                # Exponential backoff: 0.8s, 1.6s, 3.2s
+                time.sleep(0.8 * (2 ** attempt))
+                continue
+            raise
+        except Exception as e:
+            last_err = e
+            raise
+    if last_err:
+        raise last_err
+    return {}
 
 
 def _is_game_outcome_series(series_ticker: str) -> bool:
@@ -353,6 +385,10 @@ def _select_event_sides(event_markets: list[dict]) -> list[dict]:
     return []
 
 
+# Track most recent error so the orchestrator can surface it once per run.
+_LAST_ERROR: dict = {"count": 0, "sample": ""}
+
+
 def _fetch_series_events(series_ticker: str) -> list[dict]:
     """Fetch all open events for a single series. Returns [] on any error.
 
@@ -367,7 +403,11 @@ def _fetch_series_events(series_ticker: str) -> list[dict]:
         d = _http_get_json(url, timeout=10)
         return d.get("events") or []
     except Exception as e:
-        # Swallow per-series errors so one bad series doesn't kill the run.
+        # Record one sample error per run so the operator can debug
+        # without flooding logs from 70 parallel failures.
+        _LAST_ERROR["count"] += 1
+        if not _LAST_ERROR["sample"]:
+            _LAST_ERROR["sample"] = f"{type(e).__name__}: {e}"
         return []
 
 
@@ -377,12 +417,22 @@ def fetch() -> dict | None:
     t0 = time.time()
     qualified: list[dict] = []
 
-    # Phase 1: parallel-fetch all candidate series. ~50 series x ~0.5s each,
-    # 12 workers → typically completes in under 5 seconds.
+    # Reset error tracking for this run.
+    _LAST_ERROR["count"] = 0
+    _LAST_ERROR["sample"] = ""
+
+    # Phase 1: parallel-fetch all candidate series with conservative
+    # concurrency. ~70 series × ~0.3s each = ~5s with 4 workers, well
+    # within Kalshi's rate limits (we observed 429s at 12 workers).
+    # Each worker retries on 429 with exponential backoff (see _http_get_json).
     all_events: list[dict] = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:
         for events in ex.map(_fetch_series_events, ACTIVE_LIVE_SPORTS_SERIES):
             all_events.extend(events)
+
+    if _LAST_ERROR["count"]:
+        print(f"[kalshi] {_LAST_ERROR['count']}/{len(ACTIVE_LIVE_SPORTS_SERIES)} "
+              f"series fetches errored. sample: {_LAST_ERROR['sample']}")
 
     # Phase 2: filter to live + odds window + emit matchup sides.
     for e in all_events:
@@ -447,6 +497,10 @@ def fetch() -> dict | None:
         "series_queried": len(ACTIVE_LIVE_SPORTS_SERIES),
         "events_seen": len(all_events),
         "live_sports_count": len(qualified),
+        "errors": {
+            "count": _LAST_ERROR["count"],
+            "sample": _LAST_ERROR["sample"],
+        } if _LAST_ERROR["count"] else None,
         "events": top,
     }
 
