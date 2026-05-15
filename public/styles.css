@@ -271,6 +271,142 @@ img, svg {
 }
 
 /* ============================================================
+   KALSHI LIVE SPORTS SIDEBAR (Macro tab, ≥1300px viewports)
+   Fixed to the right edge so it doesn't push the main content.
+   ============================================================ */
+.kalshi-sidebar {
+  position: fixed;
+  top: 5rem;                /* below the sticky nav */
+  right: 1.25rem;
+  width: 14rem;
+  max-height: calc(100vh - 7rem);
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 1rem;
+  z-index: 40;
+  display: none;            /* hidden by default — JS + media query opt in */
+}
+
+@media (min-width: 1300px) {
+  .kalshi-sidebar.macro-active {
+    display: block;
+  }
+}
+
+/* Subtle scrollbar styling so it blends with the dark theme */
+.kalshi-sidebar::-webkit-scrollbar { width: 4px; }
+.kalshi-sidebar::-webkit-scrollbar-thumb { background: var(--bg-secondary); border-radius: var(--radius-full); }
+
+.kalshi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.kalshi-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-primary);
+}
+
+.kalshi-source {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.kalshi-source:hover { color: var(--text-primary); }
+
+.kalshi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.kalshi-pill {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 0.625rem 0.75rem;
+  transition: var(--transition);
+}
+
+.kalshi-pill:hover {
+  border-color: var(--green);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.kalshi-pill-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.125rem;
+}
+
+.kalshi-pct {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--green);
+}
+
+.kalshi-sport {
+  font-size: 0.5625rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.kalshi-name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kalshi-time {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-top: 0.125rem;
+}
+
+.kalshi-time.past { opacity: 0.55; }
+
+.kalshi-empty {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 1rem 0.5rem;
+  line-height: 1.4;
+}
+
+.kalshi-footer {
+  font-size: 0.5625rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+  letter-spacing: 0.04em;
+  font-family: var(--font-mono);
+}
+
+/* ============================================================
    QUICK COMPARE (BTC vs Assets tab) — passes through to StockAnalysis
    ============================================================ */
 .compare-card {

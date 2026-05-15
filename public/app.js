@@ -9,6 +9,8 @@ let dashboardData = null;
 let nodeData = null;
 let btcChartData = null;
 let btcChartInstance = null;
+let kalshiData = null;
+const KALSHI_REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes
 
 // User's NODE watchlist (must match server-side WATCHLIST in fetcher/node_etf/analyze.py)
 const NODE_WATCHLIST_TICKERS = ['HODL', 'MSTR', 'ASST', 'STRC'];
@@ -332,6 +334,82 @@ var CHART_TIMEFRAMES = [
   { key: '10Y', source: 'daily',    points: null } // all daily
 ];
 var currentChartTf = '1M';
+
+// ============================================================
+// KALSHI LIVE SPORTS SIDEBAR
+// ============================================================
+
+async function loadKalshi() {
+  try {
+    var resp = await fetch('kalshi.json?t=' + Date.now());
+    if (!resp.ok) throw new Error('kalshi fetch failed: ' + resp.status);
+    kalshiData = await resp.json();
+  } catch (err) {
+    console.error('Kalshi load error:', err);
+    kalshiData = null;
+  }
+  try {
+    renderKalshi();
+  } catch (err) {
+    console.error('Kalshi render error:', err);
+  }
+}
+
+function _fmtKalshiTime(minutes) {
+  if (minutes == null) return '';
+  var abs = Math.abs(minutes);
+  if (abs < 60) {
+    return (minutes >= 0 ? 'in ' + minutes + 'm' : Math.abs(minutes) + 'm ago');
+  }
+  var hrs = Math.floor(abs / 60);
+  var mins = abs % 60;
+  var label = hrs + 'h' + (mins ? ' ' + mins + 'm' : '');
+  return minutes >= 0 ? 'in ' + label : label + ' ago';
+}
+
+function renderKalshi() {
+  var list = document.getElementById('kalshiList');
+  var footer = document.getElementById('kalshiFooter');
+  if (!list) return;
+
+  if (!kalshiData || !kalshiData.events) {
+    list.innerHTML = '<p class="kalshi-empty">Unable to load Kalshi data.</p>';
+    if (footer) footer.textContent = '';
+    return;
+  }
+
+  var events = kalshiData.events || [];
+  if (events.length === 0) {
+    list.innerHTML = '<p class="kalshi-empty">No live sports in the 83–98% range right now.</p>';
+  } else {
+    list.innerHTML = events.map(function(e) {
+      var mins = e.ends_in_minutes;
+      var timeStr = _fmtKalshiTime(mins);
+      var timeCls = (mins != null && mins < 0) ? 'kalshi-time past' : 'kalshi-time';
+      return '<a class="kalshi-pill" href="' + escapeHtml(e.url) + '" target="_blank" rel="noopener">' +
+        '<div class="kalshi-pill-top">' +
+          '<span class="kalshi-pct">' + e.favorite_pct + '%</span>' +
+          '<span class="kalshi-sport">' + escapeHtml(e.sport_label || '') + '</span>' +
+        '</div>' +
+        '<div class="kalshi-name">' + escapeHtml(e.favorite_name || '—') + '</div>' +
+        (timeStr ? '<div class="' + timeCls + '">' + escapeHtml(timeStr) + '</div>' : '') +
+      '</a>';
+    }).join('');
+  }
+
+  if (footer && kalshiData.fetched_at) {
+    footer.textContent = 'Updated ' + timeAgo(kalshiData.fetched_at);
+  }
+}
+
+// Show/hide the sidebar based on which tab is active (only visible on Macro).
+function updateKalshiSidebarVisibility() {
+  var sidebar = document.getElementById('kalshiSidebar');
+  if (!sidebar) return;
+  var macro = document.getElementById('macro');
+  var isMacroActive = macro && macro.classList.contains('section-active');
+  sidebar.classList.toggle('macro-active', !!isMacroActive);
+}
 
 async function loadBtcChart() {
   try {
@@ -1569,6 +1647,8 @@ function initNavigation() {
     // Each tab starts at the top — the user shouldn't carry over the
     // scroll position from a previous tab.
     window.scrollTo(0, 0);
+    // Keep the Kalshi sidebar in sync with the Macro tab.
+    updateKalshiSidebarVisibility();
   }
 
   navLinks.forEach(function(link) {
@@ -1613,7 +1693,9 @@ document.addEventListener('DOMContentLoaded', function() {
   loadData();
   loadNodeData();
   loadBtcChart();
+  loadKalshi();
   setInterval(loadData, REFRESH_INTERVAL);
   setInterval(loadNodeData, REFRESH_INTERVAL);
   setInterval(loadBtcChart, REFRESH_INTERVAL);
+  setInterval(loadKalshi, KALSHI_REFRESH_INTERVAL);
 });
