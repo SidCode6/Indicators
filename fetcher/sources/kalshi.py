@@ -349,20 +349,28 @@ def _timedelta_minutes(m: int):
 
 
 def _is_live_now(occurrence_dt, sport_label: str) -> bool:
-    """A game is live iff (occurrence - pre_game_buffer) <= now <= (occurrence + duration).
+    """A game is live iff (occurrence - PRE_GAME_BUFFER) <= now <= (occurrence + duration).
 
-    For most sports the pre-game buffer is 0 (strict "ball-rolling" filter
-    per the user's spec). For Cricket/IPL it's 60 minutes: Kalshi marks
-    these as "LIVE" up to an hour before the official start (to drum up
-    pre-game trading), and the user wants the dashboard to match that.
+    Kalshi's `occurrence_datetime` is the originally-scheduled start time,
+    not the actual start time — and matches frequently begin earlier than
+    scheduled (when a prior match ends early, when the umpire calls the
+    coin toss early, etc.). We've seen tennis and IPL games clearly
+    playing on Kalshi's UI while their API `occurrence_datetime` is still
+    30-60 minutes in the future.
+
+    To handle this we apply a 60-minute pre-game buffer for ALL sports.
+    Trade-off: matches actually starting in 50-60 min may appear as
+    "live". In practice that's rare for the 83-98% odds window — pre-game
+    markets for clear favorites usually sit around 60-70%, not 90+. The
+    Sinner-Medvedev case (92% pre-game) is the exception, and it's still
+    excluded as long as start is >60 min away.
     """
     if not occurrence_dt:
         return False
     now = datetime.now(timezone.utc)
-    is_priority = sport_label in ("Cricket", "IPL")
-    pre_buffer_min = 60 if is_priority else 0
+    PRE_GAME_BUFFER_MIN = 60
     duration_min = SPORT_DURATION_MINUTES.get(sport_label, DEFAULT_DURATION_MINUTES)
-    start_window = occurrence_dt - _timedelta_minutes(pre_buffer_min)
+    start_window = occurrence_dt - _timedelta_minutes(PRE_GAME_BUFFER_MIN)
     end_window = occurrence_dt + _timedelta_minutes(duration_min)
     return start_window <= now <= end_window
 
