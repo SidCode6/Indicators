@@ -349,15 +349,22 @@ def _timedelta_minutes(m: int):
 
 
 def _is_live_now(occurrence_dt, sport_label: str) -> bool:
-    """A game is live iff occurrence_datetime <= now < occurrence + sport_duration."""
+    """A game is live iff (occurrence - pre_game_buffer) <= now <= (occurrence + duration).
+
+    For most sports the pre-game buffer is 0 (strict "ball-rolling" filter
+    per the user's spec). For Cricket/IPL it's 60 minutes: Kalshi marks
+    these as "LIVE" up to an hour before the official start (to drum up
+    pre-game trading), and the user wants the dashboard to match that.
+    """
     if not occurrence_dt:
         return False
     now = datetime.now(timezone.utc)
-    if occurrence_dt > now:
-        return False  # game hasn't started yet
+    is_priority = sport_label in ("Cricket", "IPL")
+    pre_buffer_min = 60 if is_priority else 0
     duration_min = SPORT_DURATION_MINUTES.get(sport_label, DEFAULT_DURATION_MINUTES)
-    end_dt = occurrence_dt + _timedelta_minutes(duration_min)
-    return now <= end_dt
+    start_window = occurrence_dt - _timedelta_minutes(pre_buffer_min)
+    end_window = occurrence_dt + _timedelta_minutes(duration_min)
+    return start_window <= now <= end_window
 
 
 def _select_event_sides(event_markets: list[dict]) -> list[dict]:
