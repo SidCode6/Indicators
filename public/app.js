@@ -10,7 +10,7 @@ let nodeData = null;
 let btcChartData = null;
 let btcChartInstance = null;
 let kalshiData = null;
-const KALSHI_REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes
+const KALSHI_REFRESH_INTERVAL = 60 * 1000; // 1 minute
 
 // User's NODE watchlist (must match server-side WATCHLIST in fetcher/node_etf/analyze.py)
 const NODE_WATCHLIST_TICKERS = ['HODL', 'MSTR', 'ASST', 'STRC'];
@@ -355,16 +355,14 @@ async function loadKalshi() {
   }
 }
 
-function _fmtKalshiTime(minutes) {
-  if (minutes == null) return '';
-  var abs = Math.abs(minutes);
-  if (abs < 60) {
-    return (minutes >= 0 ? 'in ' + minutes + 'm' : Math.abs(minutes) + 'm ago');
-  }
-  var hrs = Math.floor(abs / 60);
-  var mins = abs % 60;
-  var label = hrs + 'h' + (mins ? ' ' + mins + 'm' : '');
-  return minutes >= 0 ? 'in ' + label : label + ' ago';
+// Format an "ends in N min" label — only positive minutes (we only ever
+// emit currently-live games, so ends_in is always in the future).
+function _fmtKalshiEndsIn(minutes) {
+  if (minutes == null || minutes < 0) return '';
+  if (minutes < 60) return '~' + minutes + 'm left';
+  var hrs = Math.floor(minutes / 60);
+  var mins = minutes % 60;
+  return '~' + hrs + 'h' + (mins ? ' ' + mins + 'm' : '') + ' left';
 }
 
 function renderKalshi() {
@@ -380,19 +378,28 @@ function renderKalshi() {
 
   var events = kalshiData.events || [];
   if (events.length === 0) {
-    list.innerHTML = '<p class="kalshi-empty">No live sports in the 83–98% range right now.</p>';
+    list.innerHTML = '<p class="kalshi-empty">No live sports in the 83–98% range right now. (Cricket games shown automatically when live.)</p>';
   } else {
     list.innerHTML = events.map(function(e) {
-      var mins = e.ends_in_minutes;
-      var timeStr = _fmtKalshiTime(mins);
-      var timeCls = (mins != null && mins < 0) ? 'kalshi-time past' : 'kalshi-time';
-      return '<a class="kalshi-pill" href="' + escapeHtml(e.url) + '" target="_blank" rel="noopener">' +
-        '<div class="kalshi-pill-top">' +
-          '<span class="kalshi-pct">' + e.favorite_pct + '%</span>' +
-          '<span class="kalshi-sport">' + escapeHtml(e.sport_label || '') + '</span>' +
-        '</div>' +
-        '<div class="kalshi-name">' + escapeHtml(e.favorite_name || '—') + '</div>' +
-        (timeStr ? '<div class="' + timeCls + '">' + escapeHtml(timeStr) + '</div>' : '') +
+      var sides = e.sides || [];
+      var sport = escapeHtml(e.sport_label || '');
+      var sportBadge = e.is_priority
+        ? '<span class="kalshi-sport priority">' + sport + ' · LIVE</span>'
+        : '<span class="kalshi-sport">' + sport + '</span>';
+      var endsLabel = _fmtKalshiEndsIn(e.ends_in_minutes);
+
+      var sidesHtml = sides.map(function(s) {
+        return '<div class="kalshi-side">' +
+          '<span class="kalshi-side-pct">' + s.yes_pct + '%</span>' +
+          '<span class="kalshi-side-name">' + escapeHtml(s.name || '—') + '</span>' +
+        '</div>';
+      }).join('');
+
+      return '<a class="kalshi-pill' + (e.is_priority ? ' priority' : '') +
+        '" href="' + escapeHtml(e.url) + '" target="_blank" rel="noopener">' +
+        '<div class="kalshi-pill-head">' + sportBadge + '</div>' +
+        '<div class="kalshi-sides">' + sidesHtml + '</div>' +
+        (endsLabel ? '<div class="kalshi-time">' + escapeHtml(endsLabel) + '</div>' : '') +
       '</a>';
     }).join('');
   }

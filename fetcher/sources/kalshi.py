@@ -1,25 +1,45 @@
 """Live Kalshi sports markets — narrow filter for the Macro-tab sidebar.
 
 Pulls the public Kalshi API (no auth required), via the events endpoint
-with ``with_nested_markets=true`` (single ~20s scan returns everything we
-need). Filters to:
-  - events.category == "Sports"
-  - market series_ticker ending in GAME/MATCH/FIGHT/RACE (game-outcome
-    markets only — excludes prop bets, awards, drafts, season-long picks)
-  - expected_expiration_time within the next 12 hours, or within the last
-    2 hours (covers live games in progress or just-completed but
-    still-open markets)
-  - YES bid between 83% and 98% (we only surface markets where ONE side
-    is heavily favored — naturally handles multi-outcome races by picking
-    out the dominant pick rather than 40 NO-side near-certainties)
+with ``with_nested_markets=true``. Surfaces only markets where the
+underlying game is *currently being played*.
 
-Sorts by YES bid descending. One entry per event_ticker (so a tennis
-match contributes one pill, not two). Output written to
-``public/kalshi.json`` and consumed by the Macro-tab sidebar.
+"Currently live" definition
+---------------------------
+A market is live iff:
+    occurrence_datetime <= now <= occurrence_datetime + sport_duration
+
+`occurrence_datetime` is Kalshi's scheduled start. We add a sport-specific
+buffer (e.g. 2.5h tennis, 4h cricket) to estimate when the game should be
+over. Games that haven't started yet are excluded; games whose buffer has
+elapsed are excluded.
+
+Display
+-------
+For each live event:
+- If the event has exactly 2 markets (head-to-head matchup), we emit both
+  sides so the sidebar pill shows e.g. "91% Sinner / 9% Medvedev".
+- For multi-outcome events (race, tournament winner), we emit only the
+  highest YES bid (the dominant favorite).
+
+Special rules per user
+----------------------
+- Cricket / IPL live games are ALWAYS surfaced when live, regardless of
+  the YES-bid range, and they're sorted at the top of the list.
+- All other sports require favorite YES bid in [83%, 98%].
+
+URL
+---
+We can't reliably verify Kalshi event-page URL slugs from server-side
+(Vercel anti-bot blocks crawls). To avoid the user's earlier mismatch
+problem (multiple pills resolving to the same wrong page), each pill
+links to the series-page URL — guaranteed to land in the right series
+where the user can see the live event listed and click through.
 """
 
 from __future__ import annotations
 
+import concurrent.futures
 import json
 import os
 import time
@@ -35,23 +55,110 @@ FETCHER_DIR = os.path.dirname(SCRIPT_DIR)
 PROJECT_DIR = os.path.dirname(FETCHER_DIR)
 OUTPUT_PATH = os.path.join(PROJECT_DIR, "public", "kalshi.json")
 
-# Filter knobs (user-spec)
+# Filter knobs
 MIN_FAVORITE_PCT = 0.83
 MAX_FAVORITE_PCT = 0.98
-WINDOW_MIN_MINUTES = -120        # accept games that ended in the last 2h
-WINDOW_MAX_MINUTES = 12 * 60     # …or are expected to end within 12h
 MAX_OUTPUT_ITEMS = 15
 
-# Series suffixes that indicate a head-to-head GAME-level outcome (vs prop
-# bets, awards, season-long picks, drafts, etc.).
+# Game-outcome series suffixes (not prop bets / awards / drafts).
 LIVE_GAME_SUFFIXES = ("GAME", "MATCH", "FIGHT", "RACE")
 
-# Series-ticker prefix -> human sport label for the UI badge.
-# Order matters: longer/more-specific prefixes first.
+# Curated list of Kalshi sports series that publish per-game matchup markets.
+# Querying these directly (instead of scanning all ~7000 events) keeps each
+# refresh under ~5 seconds — fast enough for 1-min cadence. The list is
+# inclusive; series with no current games just return empty in <500ms.
+# If new sports series appear on Kalshi we can add them here.
+ACTIVE_LIVE_SPORTS_SERIES = [
+    # Tennis
+    "KXATPMATCH", "KXATPCHALLENGERMATCH", "KXATPSETWINNER", "KXITFMATCH",
+    "KXWTAGAME",
+    # Cricket (priority per user)
+    "KXIPLGAME", "KXCRICKETT20IMATCH", "KXPSLGAME", "KXCOUNTYCHAMPMATCH",
+    "KXBBLCRICKET",
+    # Soccer
+    "KXEPLGAME", "KXBUNDESLIGAGAME", "KXLIGUE1GAME", "KXLALIGAGAME",
+    "KXSERIEAGAME", "KXMLSGAME", "KXBRASILEIROGAME", "KXSAUDIPLGAME",
+    "KXEREDIVISIEGAME", "KXNWSLGAME", "KXUECLGAME", "KXEUROCUPGAME",
+    "KXUAEPLGAME", "KXCONMEBOLLIBGAME", "KXLIGAPORTUGALGAME",
+    "KXELITESERIENGAME", "KXSUPERLIGGAME", "KXBELGIANPL",
+    "KXALEAGUEGAME", "KXLIGAMXGAME", "KXEFLL1GAME", "KXDFBPOKALGAME",
+    "KXAFCACGAME", "KXNTLFRIENDLY", "KXINTLFRIENDLYGAME",
+    # MLB / NBA / NHL / NFL
+    "KXMLBGAME", "KXNBAGAME", "KXNHLGAME", "KXWNBAGAME",
+    # UFC / Boxing
+    "KXUFCFIGHT", "KXBOXING",
+    # Esports
+    "KXR6GAME", "KXDOTA2GAME", "KXLOLGAME", "KXCS2GAME",
+    "KXVALORANTGAME", "KXCODGAME", "KXROCKETLEAGUEGAME",
+    # Racing
+    "KXMOTOGPRACE", "KXNASCARRACE", "KXF1RACE", "KXSAILGPRACE",
+    "KXINDYCARRACE",
+    # College
+    "KXNCAAFGAME", "KXNCAAMBGAME", "KXNCAAWBGAME", "KXNCAABBGAME",
+    # Rugby
+    "KXNRLMATCH", "KXRUGBYFRA14MATCH", "KXRUGBYESLMATCH",
+    # Basketball international
+    "KXNBLGAME", "KXFIBAGAME", "KXEUROLEAGUEGAME", "KXABAGAME",
+    "KXARGLNBGAME", "KXVTBGAME", "KXLNBELITEGAME",
+    "KXNZNBLGAME", "KXGBLGAME",
+    # Other
+    "KXSUMOWIN", "KXLPGATOUR",
+]
+
+# Estimated typical game/match duration in minutes — used to estimate
+# when a live game should be over. Generous on the upper end so we don't
+# drop matches that go long.
+SPORT_DURATION_MINUTES = {
+    "Tennis": 240,            # 5-set matches can run 4h+
+    "Cricket": 300,           # IPL T20 ~3.5h, but allow 5h for delays
+    "IPL": 300,
+    "Soccer": 150,            # 90 + injury + halftime
+    "MLB": 240,
+    "NBA": 180,
+    "WNBA": 180,
+    "Basketball": 180,
+    "NHL": 200,
+    "Hockey": 200,
+    "NFL": 240,
+    "NCAA": 200,
+    "NCAA Basketball": 180,
+    "NCAA Football": 240,
+    "NCAA Baseball": 240,
+    "UFC": 120,               # full card spans hours
+    "Boxing": 120,
+    "Esports": 180,
+    "PGA": 360,               # round can be 5-6h
+    "LPGA": 360,
+    "Golf": 360,
+    "MotoGP": 180,
+    "NASCAR": 300,
+    "F1": 180,
+    "IndyCar": 240,
+    "SailGP": 180,
+    "Sumo": 60,
+    "Rugby": 130,
+    "Australian Rules": 150,
+    "Lacrosse": 150,
+    "Field Hockey": 130,
+    "Cycling": 360,
+}
+DEFAULT_DURATION_MINUTES = 180
+
+# Series-ticker prefix -> human sport label. Order matters: more-specific
+# prefixes first (e.g. KXIPLGAME before KX).
 SPORT_LABEL_RULES = [
+    ("KXIPL",             "IPL"),       # special-cased for priority
+    ("KXT20",             "Cricket"),
+    ("KXWT20",            "Cricket"),
+    ("KXPSL",             "Cricket"),
+    ("KXBBLCRICKET",      "Cricket"),
+
     ("KXATPMATCH",        "Tennis"),
+    ("KXATPCHALLENGER",   "Tennis"),
+    ("KXATPSET",          "Tennis"),
     ("KXATP",             "Tennis"),
     ("KXWTAMATCH",        "Tennis"),
+    ("KXWTAGAME",         "Tennis"),
     ("KXWTA",             "Tennis"),
     ("KXITF",             "Tennis"),
     ("KXGRANDSLAM",       "Tennis"),
@@ -67,11 +174,6 @@ SPORT_LABEL_RULES = [
     ("KXLPGA",            "LPGA"),
     ("KXGOLF",            "Golf"),
     ("KXKFTOUR",          "Golf"),
-
-    ("KXIPL",             "Cricket"),
-    ("KXT20",             "Cricket"),
-    ("KXWT20",            "Cricket"),
-    ("KXPSL",             "Cricket"),
 
     ("KXEPL",             "Soccer"),
     ("KXBUNDESLIGA",      "Soccer"),
@@ -94,11 +196,10 @@ SPORT_LABEL_RULES = [
     ("KXALEAGUE",         "Soccer"),
     ("KXCONMEBOL",        "Soccer"),
     ("KXLIGAMX",          "Soccer"),
+    ("KXUAEPL",           "Soccer"),
 
     ("KXUFC",             "UFC"),
     ("KXBOXING",          "Boxing"),
-    ("KXWBC",             "Boxing"),
-    ("KXMCGREGOR",        "Boxing"),
 
     ("KXR6GAME",          "Esports"),
     ("KXDOTA2",           "Esports"),
@@ -129,58 +230,40 @@ SPORT_LABEL_RULES = [
     ("KXNCAAB",           "NCAA Baseball"),
     ("KXMARMAD",          "NCAA Basketball"),
     ("KXWMARMAD",         "NCAA Basketball"),
-    ("KXHEISMAN",         "NCAA Football"),
 
     ("KXNRL",             "Rugby"),
     ("KXRUGBY",           "Rugby"),
     ("KXFRA14",           "Rugby"),
 
     ("KXSUMO",            "Sumo"),
-    ("KXSB",              "NFL"),
     ("KXLACR",            "Lacrosse"),
     ("KXLAX",             "Lacrosse"),
     ("KXPLL",             "Lacrosse"),
-    ("KXNCAA",            "NCAA"),
+    ("KXAFL",             "Australian Rules"),
     ("KXHNL",             "Hockey"),
     ("KXSWISSLEAGUE",     "Hockey"),
     ("KXKLEAGUE",         "Hockey"),
     ("KXCZEFL",           "Hockey"),
     ("KXECUL",            "Hockey"),
     ("KXCHLLD",           "Hockey"),
-    ("KXNZNBL",           "Basketball"),
-
-    ("KXCHESS",           "Chess"),
-    ("KXIMO",             "Olympics"),
-    ("KXAFL",             "Australian Rules"),
-    ("KXSCOT",            "Curling"),
-    ("KXPSA",             "Squash"),
-    ("KXFO",              "Field Hockey"),
-    ("KXFLOYD",           "Boxing"),
 ]
 
 
-def _http_get_json(url: str, timeout: int = 15) -> dict:
+def _http_get_json(url: str, timeout: int = 25) -> dict:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return json.loads(r.read())
 
 
-# ----- Helpers ------------------------------------------------------------
-
 def _is_game_outcome_series(series_ticker: str) -> bool:
-    """True if the series looks like a per-game / per-match outcome market.
-
-    Excludes season-long picks, awards, drafts, and most prop bets — which
-    is the difference between 'live sports right now' and 'whoever wins
-    MVP some day next year'."""
+    """True if the series looks like a per-game/per-match outcome market."""
     if not series_ticker:
         return False
     s = series_ticker.upper()
-    return any(s.endswith(suffix) for suffix in LIVE_GAME_SUFFIXES)
+    return any(s.endswith(suf) for suf in LIVE_GAME_SUFFIXES)
 
 
 def _sport_label_for_series(series_ticker: str) -> str:
-    """Return a short human sport label, or '' if no rule matches."""
     if not series_ticker:
         return ""
     for prefix, label in SPORT_LABEL_RULES:
@@ -189,34 +272,11 @@ def _sport_label_for_series(series_ticker: str) -> str:
     return ""
 
 
-def _build_event_url(event_ticker: str | None, series_ticker: str | None) -> str:
-    """Best-effort Kalshi event-page URL.
-
-    Pattern: https://kalshi.com/markets/{series-lowercase}/{event-suffix-lowercase}
-    where event-suffix is everything after the first dash in event_ticker.
-    Falls back to the series page if we don't have a clean event_ticker.
-    """
-    series = (series_ticker or "").lower()
-    if not series and event_ticker:
-        series = (event_ticker or "").split("-")[0].lower()
-    suffix = ""
-    if event_ticker and "-" in event_ticker:
-        suffix = event_ticker.split("-", 1)[1].lower()
-    if series and suffix:
-        return f"https://kalshi.com/markets/{series}/{suffix}"
-    if series:
-        return f"https://kalshi.com/markets/{series}"
-    return "https://kalshi.com/calendar"
-
-
-def _minutes_until(iso_ts: str | None) -> int | None:
-    """Minutes from now until iso_ts. None on parse failure."""
+def _parse_iso(iso_ts: str | None):
     if not iso_ts:
         return None
     try:
-        t = datetime.fromisoformat(iso_ts.replace("Z", "+00:00"))
-        delta = (t - datetime.now(timezone.utc)).total_seconds() / 60
-        return int(round(delta))
+        return datetime.fromisoformat(iso_ts.replace("Z", "+00:00"))
     except Exception:
         return None
 
@@ -228,94 +288,165 @@ def _parse_dollars(s) -> float:
         return 0.0
 
 
-# ----- Main fetch ---------------------------------------------------------
+def _build_series_url(series_ticker: str | None) -> str:
+    """Series-page URL — guaranteed to resolve correctly on Kalshi.
+
+    We can't verify event-specific slugs from server-side (Vercel's
+    anti-bot blocks our probes), so we link to the series page. Users
+    land on a page listing every active event in that series, including
+    the live one they clicked on — one extra click, but no mismatches.
+    """
+    if not series_ticker:
+        return "https://kalshi.com/calendar"
+    return f"https://kalshi.com/markets/{series_ticker.lower()}"
+
+
+def _ends_in_minutes(occurrence_dt, sport_label: str) -> int | None:
+    """Estimate remaining game time in minutes (negative if already past)."""
+    if not occurrence_dt:
+        return None
+    duration = SPORT_DURATION_MINUTES.get(sport_label, DEFAULT_DURATION_MINUTES)
+    end_dt = occurrence_dt + _timedelta_minutes(duration)
+    diff = (end_dt - datetime.now(timezone.utc)).total_seconds() / 60
+    return int(round(diff))
+
+
+def _timedelta_minutes(m: int):
+    from datetime import timedelta
+    return timedelta(minutes=m)
+
+
+def _is_live_now(occurrence_dt, sport_label: str) -> bool:
+    """A game is live iff occurrence_datetime <= now < occurrence + sport_duration."""
+    if not occurrence_dt:
+        return False
+    now = datetime.now(timezone.utc)
+    if occurrence_dt > now:
+        return False  # game hasn't started yet
+    duration_min = SPORT_DURATION_MINUTES.get(sport_label, DEFAULT_DURATION_MINUTES)
+    end_dt = occurrence_dt + _timedelta_minutes(duration_min)
+    return now <= end_dt
+
+
+def _select_event_sides(event_markets: list[dict]) -> list[dict]:
+    """Return the matchup sides to display for one event.
+
+    - 2-market events (head-to-head): both sides, sorted by YES bid desc.
+    - >2-market events (race, tournament): only the highest-YES side.
+    Skips markets without bid data.
+    """
+    candidates = []
+    for m in event_markets:
+        yb = _parse_dollars(m.get("yes_bid_dollars"))
+        if yb <= 0:
+            continue  # market has no YES side liquidity / not active
+        candidates.append({
+            "name": (m.get("yes_sub_title") or "").strip(),
+            "yes_pct": int(round(yb * 100)),
+            "market_ticker": m.get("ticker"),
+        })
+    candidates.sort(key=lambda x: -x["yes_pct"])
+    if len(candidates) == 2:
+        return candidates
+    if candidates:
+        return candidates[:1]
+    return []
+
+
+def _fetch_series_events(series_ticker: str) -> list[dict]:
+    """Fetch all open events for a single series. Returns [] on any error.
+
+    Each call is small (one HTTP round-trip, typically <1s). Designed to
+    be called concurrently for all sports series in parallel.
+    """
+    try:
+        url = (
+            f"{API_BASE}/events?status=open&with_nested_markets=true"
+            f"&series_ticker={series_ticker}&limit=200"
+        )
+        d = _http_get_json(url, timeout=10)
+        return d.get("events") or []
+    except Exception as e:
+        # Swallow per-series errors so one bad series doesn't kill the run.
+        return []
+
 
 def fetch() -> dict | None:
-    """Pull events, filter to live sports in the user's odds window.
-
-    Uses /events?status=open&with_nested_markets=true which returns ~7k
-    events in one paginated scan (~15-25s). Filters in-memory by category,
-    series suffix, expected_expiration_time window, and favorite %.
-    """
+    """Pull events for the curated sports-series list (in parallel), then
+    filter to currently-live matchups."""
     t0 = time.time()
-    cursor: str | None = None
-    events_scanned = 0
-    markets_examined = 0
     qualified: list[dict] = []
 
-    for _ in range(50):  # safety cap on pages
-        qs = "status=open&with_nested_markets=true&limit=200"
-        if cursor:
-            qs += f"&cursor={cursor}"
-        try:
-            d = _http_get_json(f"{API_BASE}/events?{qs}", timeout=25)
-        except Exception as e:
-            print(f"[kalshi] events page error: {e}")
-            break
-        events = d.get("events") or []
-        events_scanned += len(events)
+    # Phase 1: parallel-fetch all candidate series. ~50 series x ~0.5s each,
+    # 12 workers → typically completes in under 5 seconds.
+    all_events: list[dict] = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
+        for events in ex.map(_fetch_series_events, ACTIVE_LIVE_SPORTS_SERIES):
+            all_events.extend(events)
 
-        for e in events:
-            if e.get("category") != "Sports":
-                continue
-            series_ticker = e.get("series_ticker") or ""
-            if not _is_game_outcome_series(series_ticker):
-                continue
-            for m in (e.get("markets") or []):
-                markets_examined += 1
-                yb = _parse_dollars(m.get("yes_bid_dollars"))
-                # Filter on YES bid only — for 2-sided markets this picks
-                # the leading side (the other side is automatically <50%);
-                # for multi-outcome races/tournaments this picks only the
-                # genuinely-favored entries (not the 40 near-certain losers).
-                if not (MIN_FAVORITE_PCT <= yb <= MAX_FAVORITE_PCT):
-                    continue
-                ends_in = _minutes_until(m.get("expected_expiration_time"))
-                if ends_in is None or not (WINDOW_MIN_MINUTES <= ends_in <= WINDOW_MAX_MINUTES):
-                    continue
-                qualified.append({
-                    "market_ticker": m.get("ticker"),
-                    "event_ticker": e.get("event_ticker"),
-                    "series_ticker": series_ticker,
-                    "sport_label": _sport_label_for_series(series_ticker),
-                    "favorite_pct": int(round(yb * 100)),
-                    "favorite_name": (m.get("yes_sub_title") or "").strip(),
-                    "event_title": (e.get("title") or "").strip() or (m.get("title") or "").strip(),
-                    "ends_in_minutes": ends_in,
-                    "close_time": m.get("close_time"),
-                    "volume_24h": _parse_dollars(m.get("volume_24h_fp")),
-                    "url": _build_event_url(e.get("event_ticker"), series_ticker),
-                })
-        cursor = d.get("cursor")
-        if not cursor or not events:
-            break
-
-    # Sort: favorite_pct desc, then earlier-ending first, then volume desc.
-    qualified.sort(key=lambda x: (
-        -x["favorite_pct"],
-        x.get("ends_in_minutes") if x.get("ends_in_minutes") is not None else 9999,
-        -(x.get("volume_24h") or 0),
-    ))
-
-    # Dedupe by event_ticker: keep only the strongest favorite per event.
-    # (Avoids surfacing both "Ruud wins" and "Darderi loses" — same info.)
-    seen_events: set = set()
-    deduped: list[dict] = []
-    for q in qualified:
-        et = q["event_ticker"]
-        if et in seen_events:
+    # Phase 2: filter to live + odds window + emit matchup sides.
+    for e in all_events:
+        # Defensive: re-check category (should always be Sports given our
+        # series list, but the API could change).
+        if e.get("category") != "Sports":
             continue
-        seen_events.add(et)
-        deduped.append(q)
+        series_ticker = e.get("series_ticker") or ""
+        if not _is_game_outcome_series(series_ticker):
+            continue
+        sport_label = _sport_label_for_series(series_ticker)
+        is_priority = sport_label in ("Cricket", "IPL")
 
-    top = deduped[:MAX_OUTPUT_ITEMS]
+        markets = e.get("markets") or []
+        # All markets in an event share occurrence/expiration; use the first
+        # populated one as the event's start time.
+        sample_market = next((m for m in markets if m.get("occurrence_datetime")), None)
+        occ_dt = _parse_iso((sample_market or {}).get("occurrence_datetime"))
+        if not _is_live_now(occ_dt, sport_label):
+            continue
+
+        sides = _select_event_sides(markets)
+        if not sides:
+            continue
+
+        top_pct = sides[0]["yes_pct"]
+        # Cricket / IPL pass the odds gate unconditionally; everything
+        # else needs the favorite within the user's window.
+        if not is_priority:
+            if not (MIN_FAVORITE_PCT * 100 <= top_pct <= MAX_FAVORITE_PCT * 100):
+                continue
+
+        qualified.append({
+            "event_ticker": e.get("event_ticker"),
+            "series_ticker": series_ticker,
+            "sport_label": sport_label,
+            "is_priority": is_priority,
+            # Title is the matchup. Fall back to building it from the sides
+            # if the event doesn't have a title.
+            "event_title": (e.get("title") or "").strip()
+                or " vs ".join(s["name"] for s in sides if s["name"])
+                or series_ticker,
+            "competition": ((e.get("product_metadata") or {}).get("competition") or "").strip(),
+            "sides": sides,
+            "favorite_pct": top_pct,
+            "ends_in_minutes": _ends_in_minutes(occ_dt, sport_label),
+            "url": _build_series_url(series_ticker),
+        })
+
+    # Sort: priority (cricket/IPL) first, then by favorite_pct desc, then
+    # by earlier-ending first.
+    qualified.sort(key=lambda x: (
+        0 if x["is_priority"] else 1,
+        -x["favorite_pct"],
+        x["ends_in_minutes"] if x["ends_in_minutes"] is not None else 9999,
+    ))
+    top = qualified[:MAX_OUTPUT_ITEMS]
 
     return {
         "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "fetch_duration_seconds": round(time.time() - t0, 2),
-        "events_scanned": events_scanned,
-        "markets_examined": markets_examined,
-        "qualifying_count": len(qualified),
+        "series_queried": len(ACTIVE_LIVE_SPORTS_SERIES),
+        "events_seen": len(all_events),
+        "live_sports_count": len(qualified),
         "events": top,
     }
 
@@ -337,14 +468,19 @@ if __name__ == "__main__":
         write(p)
         print(f"Wrote {OUTPUT_PATH}")
         print(f"  fetched_at:        {p['fetched_at']}")
-        print(f"  events_scanned:    {p['events_scanned']}")
-        print(f"  markets_examined:  {p['markets_examined']}")
-        print(f"  qualifying:        {p['qualifying_count']}")
+        print(f"  series queried:    {p['series_queried']}")
+        print(f"  events seen:       {p['events_seen']}")
+        print(f"  live_sports_count: {p['live_sports_count']}")
         print(f"  output items:      {len(p['events'])}")
         print(f"  fetch duration:    {p['fetch_duration_seconds']}s")
-        for e in p["events"][:15]:
+        print()
+        for e in p["events"]:
+            prefix = "★ " if e["is_priority"] else "  "
+            sides_str = "  /  ".join(f"{s['yes_pct']}% {s['name'][:18]}" for s in e["sides"])
             mins = e.get("ends_in_minutes")
-            min_str = f"{mins:+}m" if mins is not None else "—"
-            print(f"    {e['favorite_pct']:>3}% {e['sport_label']:<10} {e['favorite_name'][:30]:<30} ends_in={min_str:<7} url={e['url']}")
+            min_str = f"~{mins}m left" if (mins is not None and mins >= 0) else "ending"
+            print(f"  {prefix}{e['sport_label']:<14}  {sides_str:<55}  ({min_str})")
+            print(f"      title: {e['event_title']}")
+            print(f"      url:   {e['url']}")
     else:
         print("FAILED")

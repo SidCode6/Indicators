@@ -14,14 +14,15 @@ while true; do
   python3 fetcher/main.py
 done &
 
-echo "=== Starting Kalshi 2-minute refresh loop ==="
-# Independent of the main fetcher. If a Kalshi fetch fails (rate-limit,
-# transient network), we ignore the error and try again in 2 minutes —
-# main dashboard data is unaffected.
+echo "=== Starting Kalshi 1-minute refresh loop ==="
+# Independent of the main fetcher. The Kalshi fetcher uses parallel
+# per-series queries (~3s typical) so it comfortably fits a 1-min loop.
+# If a fetch fails (rate-limit, transient network), we swallow the error
+# and try again in 1 minute — main dashboard data is unaffected.
 (
   python3 fetcher/sources/kalshi.py || true
   while true; do
-    sleep 120
+    sleep 60
     python3 fetcher/sources/kalshi.py || true
   done
 ) &
