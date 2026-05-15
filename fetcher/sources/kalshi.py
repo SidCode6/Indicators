@@ -348,29 +348,31 @@ def _timedelta_minutes(m: int):
     return timedelta(minutes=m)
 
 
+# How far before the scheduled start to consider a match "live". Kalshi's
+# UI marks matches LIVE on its calendar significantly before they
+# technically start, and `occurrence_datetime` from the API is the
+# originally-scheduled time (not actual start). Tennis is especially
+# noisy: tournaments with multiple courts run matches sequentially, so a
+# match scheduled for 4pm can actually start at 2:30pm if the prior
+# court match ends quickly — and vice versa.
+#
+# These thresholds match what Kalshi shows on their live calendar.
+PRE_GAME_BUFFER_MINUTES = {
+    "Tennis":   150,  # 2.5h — covers ATP/WTA/ITF/Challenger schedule slop
+    "Cricket":   60,
+    "IPL":       60,
+}
+DEFAULT_PRE_GAME_BUFFER = 60
+
+
 def _is_live_now(occurrence_dt, sport_label: str) -> bool:
-    """A game is live iff (occurrence - PRE_GAME_BUFFER) <= now <= (occurrence + duration).
-
-    Kalshi's `occurrence_datetime` is the originally-scheduled start time,
-    not the actual start time — and matches frequently begin earlier than
-    scheduled (when a prior match ends early, when the umpire calls the
-    coin toss early, etc.). We've seen tennis and IPL games clearly
-    playing on Kalshi's UI while their API `occurrence_datetime` is still
-    30-60 minutes in the future.
-
-    To handle this we apply a 60-minute pre-game buffer for ALL sports.
-    Trade-off: matches actually starting in 50-60 min may appear as
-    "live". In practice that's rare for the 83-98% odds window — pre-game
-    markets for clear favorites usually sit around 60-70%, not 90+. The
-    Sinner-Medvedev case (92% pre-game) is the exception, and it's still
-    excluded as long as start is >60 min away.
-    """
+    """A game is live iff (occurrence - pre_game_buffer) <= now <= (occurrence + duration)."""
     if not occurrence_dt:
         return False
     now = datetime.now(timezone.utc)
-    PRE_GAME_BUFFER_MIN = 60
+    buffer_min = PRE_GAME_BUFFER_MINUTES.get(sport_label, DEFAULT_PRE_GAME_BUFFER)
     duration_min = SPORT_DURATION_MINUTES.get(sport_label, DEFAULT_DURATION_MINUTES)
-    start_window = occurrence_dt - _timedelta_minutes(PRE_GAME_BUFFER_MIN)
+    start_window = occurrence_dt - _timedelta_minutes(buffer_min)
     end_window = occurrence_dt + _timedelta_minutes(duration_min)
     return start_window <= now <= end_window
 
