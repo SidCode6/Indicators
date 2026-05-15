@@ -1217,6 +1217,25 @@ function renderAssetComparison() {
     btnContainer.appendChild(btn);
   });
 
+  // Subtle date range under the timeframe buttons (e.g. "May 15, 2025 → May 15, 2026")
+  var rangeEl = document.getElementById('timeframeRange');
+  if (rangeEl) {
+    var TF_DAYS = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365, '3Y': 1095, '5Y': 1825 };
+    var days = TF_DAYS[currentTimeframe];
+    if (days) {
+      var end = new Date();
+      var start = new Date(end.getTime() - days * 86400000);
+      var fmt = function(d) {
+        return d.toLocaleDateString('en-US', {
+          year: 'numeric', month: 'short', day: 'numeric'
+        });
+      };
+      rangeEl.textContent = fmt(start) + ' → ' + fmt(end);
+    } else {
+      rangeEl.textContent = '';
+    }
+  }
+
   // Get returns for current timeframe
   var returns = dashboardData.asset_returns ? dashboardData.asset_returns[currentTimeframe] : null;
   if (!returns) {
@@ -1330,9 +1349,42 @@ function getAssetIcon(symbol) {
 // QUICK COMPARE — generates a StockAnalysis comparison URL from user input
 // ============================================================
 
-// Common company-name / nickname / index aliases -> ticker recognised by
-// StockAnalysis. Opinionated: if a name isn't here we pass the input
-// through verbatim, so any exact ticker will work too.
+// Multi-word company name aliases. Keys must be space-separated UPPERCASE,
+// matched on a preprocessed input where hyphens are converted to spaces and
+// apostrophes are stripped (so "Coca-Cola", "Coca Cola", "coca cola" all work).
+// Matched longest-phrase-first to avoid partial collisions.
+var MULTI_WORD_COMPANY_NAMES = {
+  'COCA COLA': 'KO',
+  'BANK OF AMERICA': 'BAC',
+  'WELLS FARGO': 'WFC',
+  'GOLDMAN SACHS': 'GS',
+  'MORGAN STANLEY': 'MS',
+  'JP MORGAN': 'JPM', 'JPMORGAN CHASE': 'JPM',
+  'AMERICAN EXPRESS': 'AXP',
+  'JOHNSON AND JOHNSON': 'JNJ', 'JOHNSON & JOHNSON': 'JNJ',
+  'ELI LILLY': 'LLY',
+  'BRISTOL MYERS': 'BMY', 'BRISTOL MYERS SQUIBB': 'BMY',
+  'HOME DEPOT': 'HD',
+  'PROCTER AND GAMBLE': 'PG', 'PROCTER & GAMBLE': 'PG',
+  'GENERAL MOTORS': 'GM', 'GENERAL ELECTRIC': 'GE',
+  'BERKSHIRE HATHAWAY': 'BRK.B',
+  'PALO ALTO': 'PANW', 'PALO ALTO NETWORKS': 'PANW',
+  'LOCKHEED MARTIN': 'LMT', 'NORTHROP GRUMMAN': 'NOC',
+  'EXXON MOBIL': 'XOM',
+  'CORE SCIENTIFIC': 'CORZ',
+  'S&P 500': 'SPY', 'S AND P 500': 'SPY',
+  'NASDAQ 100': 'QQQ',
+  'T MOBILE': 'TMUS',
+  'AMERICAN AIRLINES': 'AAL',
+  'DELTA AIR': 'DAL', 'DELTA AIRLINES': 'DAL',
+  'UNITED AIRLINES': 'UAL',
+  'SOUTHWEST AIRLINES': 'LUV'
+};
+
+// Single-token company names / index keywords / crypto-commodity aliases →
+// ticker recognised by StockAnalysis. Keys are uppercased and post-normalized
+// (hyphens & apostrophes already stripped). Unknown names pass through
+// verbatim, so any exact ticker (e.g. "TSLA") works as-is.
 var COMPANY_TO_TICKER = {
   // Mega caps
   'TESLA': 'TSLA', 'APPLE': 'AAPL', 'MICROSOFT': 'MSFT',
@@ -1341,48 +1393,100 @@ var COMPANY_TO_TICKER = {
   'NETFLIX': 'NFLX', 'BERKSHIRE': 'BRK.B',
   // BTC ecosystem
   'STRATEGY': 'MSTR', 'MICROSTRATEGY': 'MSTR',
-  'STRIVE': 'ASST',
-  'COINBASE': 'COIN', 'ROBINHOOD': 'HOOD',
+  'STRIVE': 'ASST', 'COINBASE': 'COIN', 'ROBINHOOD': 'HOOD',
   'BLOCK': 'XYZ', 'SQUARE': 'XYZ',
   'CIRCLE': 'CRCL', 'GALAXY': 'GLXY',
   // BTC miners
   'MARATHON': 'MARA', 'CLEANSPARK': 'CLSK',
   'HUT': 'HUT', 'HUT8': 'HUT', 'CIPHER': 'CIFR',
   'TERAWULF': 'WULF', 'BITDEER': 'BTDR',
-  'CORE SCIENTIFIC': 'CORZ',
-  // Crypto / commodity keywords -> popular ETF proxies (StockAnalysis is
-  // primarily stocks/ETFs; raw crypto symbols often won't resolve there).
+  // Crypto / commodity keywords → ETF proxies (StockAnalysis is stocks/ETFs)
   'BITCOIN': 'IBIT', 'BTC': 'IBIT',
   'ETHEREUM': 'ETHA', 'ETH': 'ETHA',
-  'SOLANA': 'SOL',
   'GOLD': 'GLD', 'SILVER': 'SLV', 'OIL': 'USO',
-  // Indices -> popular ETF proxies
+  // Indices → ETF proxies
   'SP500': 'SPY', 'S&P': 'SPY', 'S&P500': 'SPY', 'SPX': 'SPY',
   'NASDAQ': 'QQQ', 'NASDAQ100': 'QQQ', 'NDX': 'QQQ',
   'DOW': 'DIA', 'DJIA': 'DIA',
   'RUSSELL': 'IWM', 'RUSSELL2000': 'IWM',
-  // Misc popular names
-  'PALANTIR': 'PLTR', 'ORACLE': 'ORCL',
-  'INTEL': 'INTC', 'JPM': 'JPM', 'JPMORGAN': 'JPM',
+  // Consumer / Retail
+  'COCACOLA': 'KO',     // post-hyphen-strip form of "Coca-Cola"
+  'MCDONALDS': 'MCD',   // post-apostrophe-strip
+  'STARBUCKS': 'SBUX', 'PEPSI': 'PEP', 'NIKE': 'NKE',
+  'COSTCO': 'COST', 'TARGET': 'TGT', 'WALMART': 'WMT',
+  'DISNEY': 'DIS',
+  // Financials
+  'JPM': 'JPM', 'JPMORGAN': 'JPM',
   'VISA': 'V', 'MASTERCARD': 'MA',
-  'DISNEY': 'DIS', 'WALMART': 'WMT'
+  'PAYPAL': 'PYPL', 'SCHWAB': 'SCHW',
+  'BAC': 'BAC', 'WFC': 'WFC', 'AXP': 'AXP',
+  // Healthcare / Pharma
+  'PFIZER': 'PFE', 'MERCK': 'MRK', 'ABBVIE': 'ABBV',
+  'LILLY': 'LLY', 'MODERNA': 'MRNA',
+  'UNITEDHEALTH': 'UNH', 'JNJ': 'JNJ',
+  // Tech
+  'AMD': 'AMD', 'INTEL': 'INTC', 'IBM': 'IBM',
+  'ORACLE': 'ORCL', 'CISCO': 'CSCO',
+  'SALESFORCE': 'CRM', 'ADOBE': 'ADBE',
+  'PALANTIR': 'PLTR',
+  'UBER': 'UBER', 'AIRBNB': 'ABNB',
+  'SNOWFLAKE': 'SNOW', 'SERVICENOW': 'NOW',
+  'SPOTIFY': 'SPOT', 'ZOOM': 'ZM',
+  'TWILIO': 'TWLO', 'DATADOG': 'DDOG',
+  'CROWDSTRIKE': 'CRWD', 'ROBLOX': 'RBLX',
+  'SHOPIFY': 'SHOP',
+  // Auto
+  'FORD': 'F', 'GM': 'GM', 'TOYOTA': 'TM',
+  'RIVIAN': 'RIVN', 'LUCID': 'LCID',
+  // Industrials
+  'BOEING': 'BA', 'CATERPILLAR': 'CAT', '3M': 'MMM',
+  'HONEYWELL': 'HON', 'GE': 'GE',
+  // Energy
+  'EXXON': 'XOM', 'EXXONMOBIL': 'XOM',
+  'CHEVRON': 'CVX', 'CONOCOPHILLIPS': 'COP',
+  // Communications
+  'VERIZON': 'VZ', 'COMCAST': 'CMCSA', 'CHARTER': 'CHTR',
+  'TMOBILE': 'TMUS', 'ATT': 'T'
 };
 
 function _normalizeCompareTicker(raw) {
   var s = (raw || '').trim().toUpperCase();
   if (!s) return null;
-  if (s.charAt(0) === '$') s = s.slice(1);  // strip "$" prefix
+  if (s.charAt(0) === '$') s = s.slice(1);             // strip "$" prefix
+  s = s.replace(/[''']/g, '').replace(/-/g, '');         // strip apostrophes and hyphens
+  if (!s) return null;
   return COMPANY_TO_TICKER[s] || s;
+}
+
+// Preprocessing: handle multi-word company names (e.g. "Bank of America")
+// before tokenization so they don't get split into useless single tokens.
+function _preprocessMultiWord(raw) {
+  // Uppercase, replace hyphens with spaces, strip apostrophes — so that
+  // "Coca-Cola" / "Coca Cola" / "coca cola" all normalize to "COCA COLA".
+  var s = (raw || '').toUpperCase()
+    .replace(/-/g, ' ')
+    .replace(/[''']/g, '');
+  var phrases = Object.keys(MULTI_WORD_COMPANY_NAMES).sort(function(a, b) {
+    return b.length - a.length;  // longest first to avoid partial matches
+  });
+  phrases.forEach(function(phrase) {
+    var escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var re = new RegExp(escaped, 'g');
+    s = s.replace(re, ' ' + MULTI_WORD_COMPANY_NAMES[phrase] + ' ');
+  });
+  return s;
 }
 
 function parseCompareInput(raw) {
   if (!raw) return [];
-  // Split on commas, semicolons, plus signs, whitespace, or "vs" tokens
-  var parts = raw.split(/[,;+]+|\s+vs\s+|\s+/i)
+  // Multi-word phrases first (Bank of America → BAC), then tokenize.
+  var preprocessed = _preprocessMultiWord(raw);
+  // Split on commas, semicolons, plus signs, whitespace, or "vs" tokens.
+  var parts = preprocessed.split(/[,;+]+|\s+VS\s+|\s+/)
     .map(function(p) { return p.trim(); })
     .filter(Boolean);
   var tickers = parts.map(_normalizeCompareTicker).filter(Boolean);
-  // Dedupe while preserving order
+  // Dedupe while preserving order.
   var seen = {};
   return tickers.filter(function(t) {
     if (seen[t]) return false;
@@ -1392,8 +1496,9 @@ function parseCompareInput(raw) {
 }
 
 function buildCompareUrl(tickers) {
-  if (!tickers || tickers.length < 2) return null;
-  // StockAnalysis URL convention: lowercase, joined by "-vs-"
+  if (!tickers || tickers.length === 0) return null;
+  // StockAnalysis supports both single-ticker (.../compare/ibit/) and
+  // multi-ticker (.../compare/mstr-vs-tsla/) URLs with the same pattern.
   var slug = tickers.map(function(t) { return t.toLowerCase(); }).join('-vs-');
   return 'https://stockanalysis.com/stocks/compare/' + slug + '/';
 }
@@ -1408,20 +1513,16 @@ function initCompareCard() {
     var tickers = parseCompareInput(input.value);
     var url = buildCompareUrl(tickers);
     if (tickers.length === 0) {
-      preview.innerHTML = '<span class="text-muted">Type 2+ tickers or company names to build a comparison URL.</span>';
+      preview.innerHTML = '<span class="text-muted">Type a ticker or company name to open it on StockAnalysis. Add more (separated by commas, spaces, or "vs") to compare.</span>';
       btn.disabled = true;
-    } else if (tickers.length === 1) {
-      preview.innerHTML = 'Resolved: <span class="resolved">' +
-        escapeHtml(tickers[0]) + '</span>. Add one more to compare.';
-      btn.disabled = true;
-    } else {
-      var safeUrl = escapeHtml(url);
-      preview.innerHTML =
-        'Resolved: <span class="resolved">' +
-        tickers.map(escapeHtml).join(' · ') + '</span><br>' +
-        '<a href="' + safeUrl + '" target="_blank" rel="noopener">' + safeUrl + '</a>';
-      btn.disabled = false;
+      return;
     }
+    var safeUrl = escapeHtml(url);
+    preview.innerHTML =
+      'Resolved: <span class="resolved">' +
+      tickers.map(escapeHtml).join(' · ') + '</span><br>' +
+      '<a href="' + safeUrl + '" target="_blank" rel="noopener">' + safeUrl + '</a>';
+    btn.disabled = false;
   }
 
   function openCompare() {

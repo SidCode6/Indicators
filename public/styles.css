@@ -952,7 +952,18 @@ img, svg {
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+}
+
+/* Subtle "May 15, 2025 → May 15, 2026" line under the timeframe buttons. */
+.timeframe-range {
+  text-align: center;
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  margin-bottom: 1.5rem;
+  min-height: 0.875rem;
 }
 
 .timeframe-btn {
