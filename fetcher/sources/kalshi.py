@@ -382,10 +382,17 @@ def _ensure_titles(cache: dict, series_tickers: list[str]) -> dict:
 
 def _slugify_series_title(title: str) -> str:
     """Kalshi's URL slug rule, derived empirically from real URLs:
-       title.lower().replace(' ', '-')
+       apostrophes are deleted, then title.lower() with spaces -> '-'.
+       e.g. "Men's T20 Cricket Match" -> "mens-t20-cricket-match"
+       (proven by a user-shared KXT20MATCH event URL).
     Trailing spaces become trailing dashes (yes, really — Kalshi preserves them).
     """
-    return title.lower().replace(" ", "-")
+    return (
+        title.lower()
+        .replace("'", "")
+        .replace("’", "")  # curly apostrophe, defensive
+        .replace(" ", "-")
+    )
 
 
 def _build_event_url(event_ticker: str | None,
