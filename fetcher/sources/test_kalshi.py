@@ -227,6 +227,35 @@ def _rec(label, fav, ends, priority=None):
             "ends_in_minutes": ends, "is_priority": priority}
 
 
+def test_maximal_coverage():
+    print("\n[maximal coverage 2026-05-16] missing series added + mislabels fixed")
+    check(len(k.ACTIVE_LIVE_SPORTS_SERIES) >= 160,
+          f"curated list expanded (~164), got {len(k.ACTIVE_LIVE_SPORTS_SERIES)}")
+    # the exact series from the user's screenshot, now present + labelled
+    for s, lbl in [("KXFACUPGAME", "Soccer"), ("KXLALIGA2GAME", "Soccer"),
+                   ("KXWTAMATCH", "Tennis"), ("KXWTACHALLENGERMATCH", "Tennis"),
+                   ("KXCHALLENGERMATCH", "Tennis"), ("KXELITESERIENGAME", "Soccer")]:
+        check(s in k.ACTIVE_LIVE_SPORTS_SERIES, f"{s} now in curated list")
+        check(k._sport_label_for_series(s) == lbl, f"{s} -> {lbl}")
+    # dormant Hockey mislabels corrected to Soccer (titles prove soccer)
+    for s in ("KXHNLGAME", "KXSWISSLEAGUEGAME", "KXKLEAGUEGAME",
+              "KXCZEFLGAME", "KXECULPGAME", "KXCHLLDPGAME"):
+        check(k._sport_label_for_series(s) == "Soccer",
+              f"{s} -> Soccer (was mislabeled Hockey)")
+    # WPL is Women's IPL cricket, NOT soccer (generator bug we caught)
+    check(k._sport_label_for_series("KXWPLGAME") == "Cricket",
+          "KXWPLGAME -> Cricket (Women's IPL, not Soccer)")
+    # 5-day Test cricket deliberately NOT added (doesn't fit live model)
+    for s in ("KXTESTMATCH", "KXWTESTMATCH", "KXCRICKETTESTMATCH"):
+        check(s not in k.ACTIVE_LIVE_SPORTS_SERIES, f"{s} excluded (multi-day Test)")
+    # the occurrence-drift fix: default buffer widened 60 -> 150
+    check(k.DEFAULT_PRE_GAME_BUFFER == 150, "DEFAULT_PRE_GAME_BUFFER == 150")
+    check(k.PRE_GAME_BUFFER_MINUTES.get("IPL") == 300, "IPL buffer still 300")
+    check("Baseball" in k.SPORT_DURATION_MINUTES
+          and "Football" in k.SPORT_DURATION_MINUTES,
+          "new duration keys Baseball/Football present")
+
+
 def _event_at(series, occ_dt, fav="0.7600", other="0.2400"):
     iso = occ_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
     return {
@@ -330,7 +359,7 @@ if __name__ == "__main__":
         test_no_rule_shadowing, test_slugify_canonical,
         test_total_fetch_failure_logic, test_write_stale_fallback,
         test_evaluate_event_isolation, test_seed_titles_consistent,
-        test_ipl_never_hidden, test_ipl_pinned_top,
+        test_ipl_never_hidden, test_ipl_pinned_top, test_maximal_coverage,
     ]:
         fn()
     print(f"\n{'='*52}")

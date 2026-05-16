@@ -22,7 +22,7 @@ A fixed-position sidebar on the **Macro Intelligence tab** showing currently-liv
 
 An event must pass ALL of these to appear:
 
-1. **Series is in the curated list** `ACTIVE_LIVE_SPORTS_SERIES` (~70 series tickers, e.g. `KXATPMATCH`, `KXIPLGAME`, `KXNBAGAME`). We query these directly in parallel rather than scanning all ~7000 Kalshi events (keeps each refresh ~3-5s).
+1. **Series is in the curated list** `ACTIVE_LIVE_SPORTS_SERIES` (~164 series tickers as of 2026-05-16 — maximal coverage of every real game-outcome Sports series, e.g. `KXATPMATCH`, `KXIPLGAME`, `KXFACUPGAME`, `KXLALIGA2GAME`, `KXWTAMATCH`). We query these directly in parallel rather than scanning all ~7000 Kalshi events.
 2. **`category == "Sports"`** (defensive re-check; Kalshi's `category=` query param is *ignored* by the API so we filter in code).
 3. **Series ticker ends in `GAME` / `MATCH` / `FIGHT` / `RACE`** — this excludes prop bets, awards, drafts, season-long markets. Only head-to-head game outcomes.
 4. **Currently live** (see §4 — the critical, subtle part).
@@ -45,9 +45,9 @@ live  iff  (occurrence_datetime − pre_game_buffer)  ≤  now  ≤  (occurrence
 | Sport | Pre-game buffer |
 |---|---|
 | **Tennis** | **150 min** (2.5h — tennis has the worst schedule slop) |
-| Cricket | 60 min |
+| Cricket (non-IPL) | 150 min |
 | **IPL** | **300 min** (5h — IPL must never be hidden while live; see below) |
-| everything else | 60 min (`DEFAULT_PRE_GAME_BUFFER`) |
+| everything else | **150 min** (`DEFAULT_PRE_GAME_BUFFER`, raised 60→150 on 2026-05-16) |
 
 So a tennis match scheduled to start in ≤150 min is treated as live (it's usually actually playing). Genuinely-pre-game matches further out (e.g. Sinner-Medvedev 158 min away) are still excluded.
 
@@ -109,7 +109,7 @@ Full example: `https://kalshi.com/markets/kxatpmatch/atp-tennis-match/kxatpmatch
 
 ## 9. Fetch architecture & rate limiting
 
-- **Parallel fetch:** `ThreadPoolExecutor(max_workers=4)` over the ~70 curated series. ~3-5s typical total. (12 workers caused widespread 429s — do not raise concurrency.)
+- **Parallel fetch:** `ThreadPoolExecutor(max_workers=4)` over the ~164 curated series (expanded 2026-05-16). Still 4 workers — do NOT raise concurrency (12 workers caused widespread 429s). The larger list raises per-cycle load; this is mitigated by the committed `SEED_SERIES_TITLES` (no cold title burst) and the `kalshi.json` stale-value fallback (a 429-storm cycle keeps the previous good data instead of blanking). Accepted tradeoff of the user's maximal-coverage choice.
 - **Retry/backoff:** `_http_get_json` retries on HTTP 429 with exponential backoff 0.8s → 1.6s → 3.2s (3 retries).
 - **Browser headers required:** Kalshi's edge drops requests with non-browser User-Agents from cloud IPs. We send a Mac-Chrome UA + `Accept` + `Origin: https://kalshi.com` + `Referer: https://kalshi.com/`. Without these, Railway gets empty/blocked responses (laptop sometimes works without — don't be fooled by local testing).
 - **Error reporting:** failures are counted; `kalshi.json` includes an `errors: {count, sample}` field (null if none). Expect ~0-1 / 71 transient failures per run; that's fine.
