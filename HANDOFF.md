@@ -90,6 +90,7 @@ Indicators/
 - `last_updated` is the only key never substituted
 
 ## Kalshi sidebar (current implementation)
+> **Full spec:** see `KALSHI_SPEC.md` (root) — complete filter chain, live-detection, URL rule, rate-limiting. Read it before any Kalshi change.
 - **Trigger:** Macro tab active AND viewport ≥ 1300px
 - **Refresh:** 1 minute (both server and client)
 - **Filter:**
