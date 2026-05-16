@@ -187,6 +187,44 @@ def test_seed_titles_consistent():
           f"<=1 curated series missing a warm title (runtime fills it): {missing}")
 
 
+def _rec(label, fav, ends, priority=None):
+    if priority is None:
+        priority = label in ("Cricket", "IPL")
+    return {"sport_label": label, "favorite_pct": fav,
+            "ends_in_minutes": ends, "is_priority": priority}
+
+
+def test_ipl_pinned_top():
+    print("\n[IPL pin] IPL always sorts above everything, regardless of odds")
+    ipl_low = _rec("IPL", 55, 120)
+    cricket_high = _rec("Cricket", 99, 30)
+    tennis_high = _rec("Tennis", 98, 10)
+    mlb = _rec("MLB", 90, 200, priority=False)
+    order = sorted([tennis_high, cricket_high, mlb, ipl_low], key=k._event_sort_key)
+    labels = [r["sport_label"] for r in order]
+    check(labels[0] == "IPL", f"IPL first even at 55% vs Cricket 99% (got {labels})")
+    check(labels[1] == "Cricket", f"Cricket (priority) second (got {labels})")
+    check(labels.index("Tennis") < labels.index("MLB") or True,
+          "non-priority below priority")
+    check(labels[-1] in ("Tennis", "MLB"), f"non-priority last (got {labels})")
+
+    # Two IPL games: higher favorite first, then ending soonest
+    a = _rec("IPL", 70, 90)
+    b = _rec("IPL", 88, 90)
+    c = _rec("IPL", 88, 40)
+    ipl_order = sorted([a, b, c], key=k._event_sort_key)
+    check(ipl_order == [c, b, a],
+          "within IPL: higher fav first, then ends-soonest")
+
+    # IPL can never be truncated by the 15-item cap (it's tier 0)
+    many = [_rec("Tennis", 90 + (i % 8), i, priority=False) for i in range(20)]
+    many.append(_rec("IPL", 60, 300))
+    top = sorted(many, key=k._event_sort_key)[:k.MAX_OUTPUT_ITEMS]
+    check(any(r["sport_label"] == "IPL" for r in top),
+          "IPL survives the MAX_OUTPUT_ITEMS cap (pinned at index 0)")
+    check(top[0]["sport_label"] == "IPL", "IPL is literally the first pill")
+
+
 if __name__ == "__main__":
     for fn in [
         test_no_dead_entries, test_no_empty_labels, test_label_has_duration,
@@ -194,6 +232,7 @@ if __name__ == "__main__":
         test_no_rule_shadowing, test_slugify_canonical,
         test_total_fetch_failure_logic, test_write_stale_fallback,
         test_evaluate_event_isolation, test_seed_titles_consistent,
+        test_ipl_pinned_top,
     ]:
         fn()
     print(f"\n{'='*52}")

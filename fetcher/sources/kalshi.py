@@ -658,6 +658,27 @@ def _evaluate_event(e: dict, title_cache: dict) -> dict | None:
     }
 
 
+def _event_sort_key(x: dict):
+    """Sidebar ordering. Tiers (explicit user requirement):
+      0 = IPL  — ALWAYS pinned to the very top whenever live, above
+                 everything incl. other cricket, regardless of odds.
+      1 = other priority (Cricket) — bypasses the gate, above the rest.
+      2 = everything else (already passed the 83-98% gate).
+    Within a tier: higher favorite % first, then ending soonest. Because
+    IPL is tier 0 it can never be pushed out by the MAX_OUTPUT_ITEMS cap."""
+    if x["sport_label"] == "IPL":
+        tier = 0
+    elif x["is_priority"]:
+        tier = 1
+    else:
+        tier = 2
+    return (
+        tier,
+        -x["favorite_pct"],
+        x["ends_in_minutes"] if x["ends_in_minutes"] is not None else 9999,
+    )
+
+
 def fetch() -> dict | None:
     """Pull events for the curated sports-series list (in parallel), then
     filter to currently-live matchups."""
@@ -701,13 +722,7 @@ def fetch() -> dict | None:
         if rec is not None:
             qualified.append(rec)
 
-    # Sort: priority (cricket/IPL) first, then by favorite_pct desc, then
-    # by earlier-ending first.
-    qualified.sort(key=lambda x: (
-        0 if x["is_priority"] else 1,
-        -x["favorite_pct"],
-        x["ends_in_minutes"] if x["ends_in_minutes"] is not None else 9999,
-    ))
+    qualified.sort(key=_event_sort_key)  # IPL pinned top — see _event_sort_key
     top = qualified[:MAX_OUTPUT_ITEMS]
 
     return {

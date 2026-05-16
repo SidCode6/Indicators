@@ -67,6 +67,12 @@ If `sport_label in ("Cricket", "IPL")`:
 - **Sorted to the top** of the sidebar (priority sort key).
 - Rendered with a **red-accent border + "LIVE" badge** in the UI.
 
+**IPL is pinned ABOVE everything, including other cricket** (explicit
+user requirement — IPL is the one thing the user must never miss).
+The sort uses three tiers: tier 0 = IPL, tier 1 = other priority
+(Cricket), tier 2 = all other sports. So a live IPL match is always the
+top pill regardless of its odds or any other match's odds/ranking.
+
 All other sports: must satisfy the 83-98% favorite-odds window.
 
 ## 7. Display / output shape
@@ -76,7 +82,7 @@ Per live event, `kalshi.json` emits:
 - **2-market events** (head-to-head, e.g. tennis/most games): BOTH sides, e.g. `91% Sinner / 9% Medvedev`.
 - **Multi-outcome events** (NASCAR race, tournament winner, many markets): ONLY the single highest-YES favorite (showing 40 "driver loses" rows would be noise).
 
-Sort order: (1) Cricket/IPL priority first, (2) favorite % descending, (3) earliest-ending first. Capped at **15** pills (`MAX_OUTPUT_ITEMS`).
+Sort order: (1) tier — IPL (0) then other priority/Cricket (1) then everything else (2); (2) favorite % descending; (3) earliest-ending first. Capped at **15** pills (`MAX_OUTPUT_ITEMS`); IPL is tier 0 so it can never be truncated out.
 
 ## 8. URL construction — the canonical event-page link
 
