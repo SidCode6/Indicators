@@ -46,12 +46,14 @@ live  iff  (occurrence_datetime − pre_game_buffer)  ≤  now  ≤  (occurrence
 |---|---|
 | **Tennis** | **150 min** (2.5h — tennis has the worst schedule slop) |
 | Cricket | 60 min |
-| IPL | 60 min |
+| **IPL** | **300 min** (5h — IPL must never be hidden while live; see below) |
 | everything else | 60 min (`DEFAULT_PRE_GAME_BUFFER`) |
 
 So a tennis match scheduled to start in ≤150 min is treated as live (it's usually actually playing). Genuinely-pre-game matches further out (e.g. Sinner-Medvedev 158 min away) are still excluded.
 
-**`sport_duration`** = `SPORT_DURATION_MINUTES` table (Tennis 240, Cricket 300, Soccer 150, NBA 180, MLB 240, NFL 240, UFC 120, Esports 180, NASCAR 300, etc.; default 180). After `occurrence + duration` elapses, the game is assumed over and drops off.
+**IPL's 300-min buffer (and 360-min duration)** is deliberately huge because IPL must never be hidden while live (explicit user requirement) and Kalshi's `occurrence_datetime` drifts badly. Real case 2026-05-16: `KXIPLGAME-26MAY16GTKKR` was live at the innings break while its `occurrence_datetime` was still ~1.5h in the future (actual start ≈ 3.5h before nominal occ); a 60-min buffer hid it. It is bounded safely: single IPL games are ~24h apart so the wide window can't surface the next day's game. The one accepted trade-off: same-day **double-headers** (observed minimum gap 4h) will have overlapping windows, so both IPL games show at once — acceptable, both are IPL and both pin to the very top; showing an upcoming IPL slightly early is far better than hiding a live one. The real end signal is Kalshi *settling* the finished match (it then leaves `status=open` and drops); the 360-min duration is just a backstop.
+
+**`sport_duration`** = `SPORT_DURATION_MINUTES` table (Tennis 240, Cricket 300, **IPL 360**, Soccer 150, NBA 180, MLB 240, NFL 240, UFC 120, Esports 180, NASCAR 300, etc.; default 180). After `occurrence + duration` elapses, the game is assumed over and drops off.
 
 If you ever see "a live match isn't showing": it's almost always this — Kalshi's `occurrence_datetime` is stale and the match is outside the buffer. Widen that sport's buffer in `PRE_GAME_BUFFER_MINUTES`.
 

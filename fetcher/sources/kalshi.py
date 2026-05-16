@@ -200,8 +200,12 @@ ACTIVE_LIVE_SPORTS_SERIES = [
 # drop matches that go long.
 SPORT_DURATION_MINUTES = {
     "Tennis": 240,            # 5-set matches can run 4h+
-    "Cricket": 300,           # IPL T20 ~3.5h, but allow 5h for delays
-    "IPL": 300,
+    "Cricket": 300,           # T20 ~3.5h, but allow 5h for delays
+    # IPL: 6h end-window. Primary end signal is actually Kalshi settling
+    # the match (it then leaves status=open and drops naturally); this is
+    # a generous backstop for the settle lag and for late-starting games,
+    # so a live IPL match is never dropped early. See PRE_GAME_BUFFER.
+    "IPL": 360,
     "Soccer": 150,            # 90 + injury + halftime
     "MLB": 240,
     "NBA": 180,
@@ -532,7 +536,16 @@ def _timedelta_minutes(m: int):
 PRE_GAME_BUFFER_MINUTES = {
     "Tennis":   150,  # 2.5h — covers ATP/WTA/ITF/Challenger schedule slop
     "Cricket":   60,
-    "IPL":       60,
+    # IPL must NEVER be hidden while live (explicit user requirement).
+    # Kalshi's occurrence_datetime is the *scheduled* start and drifts
+    # badly: observed 2026-05-16 KXIPLGAME-26MAY16GTKKR live & at the
+    # innings break while occurrence_datetime was still ~1.5h in the
+    # FUTURE (match actually started ~3.5h before its nominal occ). A
+    # 300-min (5h) buffer absorbs that drift with margin. It is bounded:
+    # single IPL games are ~24h apart so a wide window can't leak the
+    # next day's game; only same-day double-headers (min gap observed
+    # 4h) overlap — acceptable, both are IPL and both pin to the top.
+    "IPL":      300,
 }
 DEFAULT_PRE_GAME_BUFFER = 60
 

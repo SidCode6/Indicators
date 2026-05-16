@@ -18,7 +18,7 @@ import importlib.util
 import json
 import os
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 _SPEC = importlib.util.spec_from_file_location(
     "kalshi", os.path.join(os.path.dirname(os.path.abspath(__file__)), "kalshi.py")
@@ -227,6 +227,68 @@ def _rec(label, fav, ends, priority=None):
             "ends_in_minutes": ends, "is_priority": priority}
 
 
+def _event_at(series, occ_dt, fav="0.7600", other="0.2400"):
+    iso = occ_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    return {
+        "category": "Sports", "series_ticker": series,
+        "event_ticker": f"{series}-T", "title": "A vs B",
+        "markets": [
+            {"occurrence_datetime": iso, "yes_sub_title": "A",
+             "yes_bid_dollars": fav, "ticker": f"{series}-A"},
+            {"occurrence_datetime": iso, "yes_sub_title": "B",
+             "yes_bid_dollars": other, "ticker": f"{series}-B"},
+        ],
+    }
+
+
+def test_ipl_never_hidden():
+    print("\n[IPL never hidden] the real 2026-05-16 bug + window edge cases")
+    now = datetime.now(timezone.utc)
+
+    # THE EXACT BUG: live IPL whose occurrence_datetime is ~1.5h in the
+    # FUTURE (KXIPLGAME-26MAY16GTKKR: occ 17:00Z, live at 15:30Z).
+    out = k._evaluate_event(_event_at("KXIPLGAME", now + timedelta(minutes=90)), {})
+    check(out is not None, "live IPL with occ +90m in FUTURE is SHOWN (was hidden)")
+    check(out and out["is_priority"] is True, "that IPL is priority (tier 0)")
+
+    # IPL shown regardless of odds (1% / 50% / 99%)
+    for fav in ("0.0100", "0.5000", "0.9900"):
+        o = k._evaluate_event(_event_at("KXIPLGAME", now + timedelta(minutes=90),
+                                        fav=fav, other="0.0100"), {})
+        check(o is not None and o["is_priority"], f"IPL @ {fav} shown (gate bypassed)")
+
+    # _is_live_now(IPL) window boundaries: buffer 300m, duration 360m
+    liv = lambda mins: k._is_live_now(now + timedelta(minutes=mins), "IPL")
+    check(liv(90) is True,   "occ now+90m  -> live (the bug case)")
+    check(liv(299) is True,  "occ now+299m -> live (just inside 300m buffer)")
+    check(liv(330) is False, "occ now+330m -> NOT live (genuinely >5h away)")
+    check(liv(-350) is True, "occ now-350m -> live (within 360m duration)")
+    check(liv(-370) is False,"occ now-370m -> NOT live (match over)")
+
+    # Non-IPL cricket with the SAME future-occ does NOT get the wide
+    # window (Cricket buffer 60m) and is gated 83-98 anyway.
+    c = k._evaluate_event(_event_at("KXT20MATCH", now + timedelta(minutes=90)), {})
+    check(c is None, "non-IPL cricket occ+90m -> hidden (60m buffer, not IPL)")
+
+    # IPL outranks a 99% non-IPL cricket AND a 98% tennis (tier 0)
+    ipl = k._evaluate_event(_event_at("KXIPLGAME", now + timedelta(minutes=90),
+                                      fav="0.4000", other="0.6000"), {})
+    recs = [ipl,
+            _rec("Cricket", 99, 30), _rec("Tennis", 98, 10)]
+    order = sorted([r for r in recs if r], key=k._event_sort_key)
+    check(order[0].get("sport_label") == "IPL",
+          "IPL @40% still sorts above Cricket@99 & Tennis@98")
+
+    # Determinism / refresh-idempotence: pure function of (occ, now),
+    # no module state — repeated calls give the same answer.
+    occ = now + timedelta(minutes=90)
+    check(k._is_live_now(occ, "IPL") == k._is_live_now(occ, "IPL"),
+          "_is_live_now is deterministic (refresh cannot flip/reset it)")
+    e = _event_at("KXIPLGAME", occ)
+    check(k._evaluate_event(e, {}) == k._evaluate_event(e, {}),
+          "_evaluate_event is idempotent (stateless — refresh-safe)")
+
+
 def test_ipl_pinned_top():
     print("\n[IPL pin] IPL always first; everything else is pure favorite order")
     ipl_low = _rec("IPL", 55, 120)
@@ -268,7 +330,7 @@ if __name__ == "__main__":
         test_no_rule_shadowing, test_slugify_canonical,
         test_total_fetch_failure_logic, test_write_stale_fallback,
         test_evaluate_event_isolation, test_seed_titles_consistent,
-        test_ipl_pinned_top,
+        test_ipl_never_hidden, test_ipl_pinned_top,
     ]:
         fn()
     print(f"\n{'='*52}")
