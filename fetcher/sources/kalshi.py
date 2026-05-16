@@ -237,9 +237,10 @@ DEFAULT_DURATION_MINUTES = 180
 # Series-ticker prefix -> human sport label. Order matters: more-specific
 # prefixes first (e.g. KXIPLGAME before KX).
 SPORT_LABEL_RULES = [
-    # --- Cricket / IPL (priority). Order: most-specific first. Every
-    # cricket series in ACTIVE_LIVE_SPORTS_SERIES must resolve here so
-    # is_priority is true and it bypasses the 83-98% odds gate. ---
+    # --- Cricket / IPL labels. Order: most-specific first. These only
+    # set the sport label/badge. Priority (gate-exempt + pinned top) is
+    # IPL-ONLY as of 2026-05-16; non-IPL cricket obeys the 83-98% gate
+    # like every other sport (see _evaluate_event / KALSHI_SPEC.md §6). ---
     ("KXIPL",             "IPL"),       # special-cased for priority
     ("KXT20",             "Cricket"),   # KXT20MATCH (men's assoc. T20)
     ("KXWT20",            "Cricket"),   # KXWT20MATCH (women's T20)
@@ -615,7 +616,11 @@ def _evaluate_event(e: dict, title_cache: dict) -> dict | None:
     if not _is_game_outcome_series(series_ticker):
         return None
     sport_label = _sport_label_for_series(series_ticker)
-    is_priority = sport_label in ("Cricket", "IPL")
+    # Per revised user requirement (2026-05-16): ONLY IPL is exempt from
+    # the 83-98% gate and pinned to the top. All other cricket now obeys
+    # the same 83-98% window as every other sport (this supersedes the
+    # earlier "all cricket always shows" rule — see KALSHI_SPEC.md §6).
+    is_priority = sport_label == "IPL"
 
     markets = e.get("markets") or []
     # All markets in an event share occurrence/expiration; use the first
@@ -630,8 +635,8 @@ def _evaluate_event(e: dict, title_cache: dict) -> dict | None:
         return None
 
     top_pct = sides[0]["yes_pct"]
-    # Cricket / IPL pass the odds gate unconditionally; everything else
-    # needs the favorite within the user's window.
+    # Only IPL passes the odds gate unconditionally; everything else
+    # (incl. non-IPL cricket) needs the favorite within the user's window.
     if not is_priority:
         if not (MIN_FAVORITE_PCT * 100 <= top_pct <= MAX_FAVORITE_PCT * 100):
             return None
@@ -659,19 +664,14 @@ def _evaluate_event(e: dict, title_cache: dict) -> dict | None:
 
 
 def _event_sort_key(x: dict):
-    """Sidebar ordering. Tiers (explicit user requirement):
-      0 = IPL  — ALWAYS pinned to the very top whenever live, above
-                 everything incl. other cricket, regardless of odds.
-      1 = other priority (Cricket) — bypasses the gate, above the rest.
-      2 = everything else (already passed the 83-98% gate).
-    Within a tier: higher favorite % first, then ending soonest. Because
-    IPL is tier 0 it can never be pushed out by the MAX_OUTPUT_ITEMS cap."""
-    if x["sport_label"] == "IPL":
-        tier = 0
-    elif x["is_priority"]:
-        tier = 1
-    else:
-        tier = 2
+    """Sidebar ordering (explicit user requirement, revised 2026-05-16):
+      tier 0 = IPL — ALWAYS pinned to the very top whenever live,
+               regardless of odds or anything else. Tier 0 also means
+               the MAX_OUTPUT_ITEMS cap can never truncate it.
+      tier 1 = everything else (all already passed the 83-98% gate;
+               non-IPL cricket is no longer special).
+    Within a tier: higher favorite % first, then ending soonest."""
+    tier = 0 if x["sport_label"] == "IPL" else 1
     return (
         tier,
         -x["favorite_pct"],

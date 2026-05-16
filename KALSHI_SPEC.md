@@ -59,21 +59,26 @@ If you ever see "a live match isn't showing": it's almost always this — Kalshi
 
 `SPORT_LABEL_RULES` is an ordered list of `(series_prefix, label)`. First matching prefix wins, so **more-specific prefixes must come first** (e.g. `KXIPL → "IPL"` is listed before generic cricket prefixes). The label drives the UI badge and the priority logic.
 
-## 6. Cricket / IPL special rules (explicit user requirement)
+## 6. IPL special rule (explicit user requirement — revised 2026-05-16)
 
-If `sport_label in ("Cricket", "IPL")`:
+**Only IPL is special.** `is_priority = (sport_label == "IPL")`.
 
+For a live **IPL** match (`sport_label == "IPL"`):
 - **Always shown when live** — the [83%, 98%] odds filter does NOT apply.
-- **Sorted to the top** of the sidebar (priority sort key).
+- **Pinned to the very top** of the sidebar (sort tier 0), above
+  everything else, regardless of its odds or any other match's
+  odds/ranking. The MAX_OUTPUT_ITEMS cap can never truncate it.
 - Rendered with a **red-accent border + "LIVE" badge** in the UI.
 
-**IPL is pinned ABOVE everything, including other cricket** (explicit
-user requirement — IPL is the one thing the user must never miss).
-The sort uses three tiers: tier 0 = IPL, tier 1 = other priority
-(Cricket), tier 2 = all other sports. So a live IPL match is always the
-top pill regardless of its odds or any other match's odds/ranking.
+**Everything else — including all non-IPL cricket (KXT20MATCH,
+KXCRICKETT20IMATCH, KXCOUNTYCHAMPMATCH, KXPSLGAME, etc.) — must satisfy
+the 83-98% favorite-odds window** and sorts normally by favorite %.
 
-All other sports: must satisfy the 83-98% favorite-odds window.
+> History: this **supersedes** the earlier rule where *all* Cricket/IPL
+> bypassed the gate and sorted to the top. As of 2026-05-16 the user
+> narrowed it: only IPL is exempt/pinned; all other cricket is treated
+> like any other sport. Cricket series still resolve to a "Cricket"
+> label (badge text) — they just no longer get priority/gate-exemption.
 
 ## 7. Display / output shape
 
@@ -82,7 +87,7 @@ Per live event, `kalshi.json` emits:
 - **2-market events** (head-to-head, e.g. tennis/most games): BOTH sides, e.g. `91% Sinner / 9% Medvedev`.
 - **Multi-outcome events** (NASCAR race, tournament winner, many markets): ONLY the single highest-YES favorite (showing 40 "driver loses" rows would be noise).
 
-Sort order: (1) tier — IPL (0) then other priority/Cricket (1) then everything else (2); (2) favorite % descending; (3) earliest-ending first. Capped at **15** pills (`MAX_OUTPUT_ITEMS`); IPL is tier 0 so it can never be truncated out.
+Sort order: (1) tier — IPL (0) then everything else (1); (2) favorite % descending; (3) earliest-ending first. Capped at **15** pills (`MAX_OUTPUT_ITEMS`); IPL is tier 0 so it can never be truncated out.
 
 ## 8. URL construction — the canonical event-page link
 
@@ -139,7 +144,7 @@ Full example: `https://kalshi.com/markets/kxatpmatch/atp-tennis-match/kxatpmatch
 
 ## 11. Common "bugs" that are actually correct behavior
 
-- **Sidebar empty:** No live game is in the 83-98% window AND no cricket/IPL is live. Correct. Near end-of-match favorites spike to 99-100% and correctly fall out of the window.
+- **Sidebar empty:** No live game is in the 83-98% window AND no IPL is live. Correct. Near end-of-match favorites spike to 99-100% and correctly fall out of the window (non-IPL cricket included, as of the 2026-05-16 rule change).
 - **A live match missing:** Almost always Kalshi's stale `occurrence_datetime` putting it outside that sport's pre-game buffer. Fix = widen `PRE_GAME_BUFFER_MINUTES[sport]`.
 - **`live_sports_count: 0` with `events_seen: 500+`:** Working — lots of events fetched, none currently live in window.
 - **`events_seen: 0`, fast duration, errors populated:** Kalshi rate-limited Railway. Check the `errors.sample` field; the browser UA + retry usually recovers next cycle.

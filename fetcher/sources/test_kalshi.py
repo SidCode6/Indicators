@@ -18,6 +18,7 @@ import importlib.util
 import json
 import os
 import tempfile
+from datetime import datetime, timezone
 
 _SPEC = importlib.util.spec_from_file_location(
     "kalshi", os.path.join(os.path.dirname(os.path.abspath(__file__)), "kalshi.py")
@@ -63,15 +64,47 @@ def test_label_has_duration():
               f"{lbl!r} in SPORT_DURATION_MINUTES (else default {k.DEFAULT_DURATION_MINUTES}m)")
 
 
+def _live_event(series, fav_dollars, other_dollars="0.0100"):
+    """Synthetic Sports event that is 'live now' (occurrence = now)."""
+    now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return {
+        "category": "Sports", "series_ticker": series,
+        "event_ticker": f"{series}-TEST", "title": "A vs B",
+        "markets": [
+            {"occurrence_datetime": now_iso, "yes_sub_title": "A",
+             "yes_bid_dollars": fav_dollars, "ticker": f"{series}-A"},
+            {"occurrence_datetime": now_iso, "yes_sub_title": "B",
+             "yes_bid_dollars": other_dollars, "ticker": f"{series}-B"},
+        ],
+    }
+
+
 def test_cricket_priority():
-    print("\n[P1] REQUIRED: every cricket series -> Cricket/IPL label AND game-outcome")
+    print("\n[rule] cricket series still LABEL Cricket/IPL + pass suffix (structural)")
     for s in CRICKET_SERIES:
         check(s in k.ACTIVE_LIVE_SPORTS_SERIES, f"{s} present in curated list")
         lbl = k._sport_label_for_series(s)
-        check(lbl in ("Cricket", "IPL"), f"{s} -> {lbl!r} is priority")
+        check(lbl in ("Cricket", "IPL"), f"{s} -> label {lbl!r}")
         check(k._is_game_outcome_series(s), f"{s} passes suffix rule")
     check("KXBBLCRICKET" not in k.ACTIVE_LIVE_SPORTS_SERIES,
-          "KXBBLCRICKET removed (no such Kalshi series; off-season)")
+          "KXBBLCRICKET removed (no such Kalshi series)")
+
+    print("\n[rule 2026-05-16] ONLY IPL is gate-exempt; non-IPL cricket obeys 83-98")
+    # Non-IPL cricket at 99% -> filtered out (was: always shown)
+    out = k._evaluate_event(_live_event("KXT20MATCH", "0.9900"), {})
+    check(out is None, "non-IPL cricket @99% is DROPPED (outside 83-98)")
+    # Non-IPL cricket at 90% -> shown, but NOT priority
+    out = k._evaluate_event(_live_event("KXT20MATCH", "0.9000"), {})
+    check(out is not None and out["is_priority"] is False,
+          "non-IPL cricket @90% shown, is_priority=False")
+    # IPL at 50% -> shown (gate-exempt) AND priority
+    out = k._evaluate_event(_live_event("KXIPLGAME", "0.5000", "0.5000"), {})
+    check(out is not None and out["is_priority"] is True,
+          "IPL @50% shown despite odds, is_priority=True")
+    # IPL at 99% -> still shown (exempt)
+    out = k._evaluate_event(_live_event("KXIPLGAME", "0.9900"), {})
+    check(out is not None and out["is_priority"] is True,
+          "IPL @99% still shown (gate does not apply to IPL)")
 
 
 def test_p2_dead_series():
@@ -189,24 +222,27 @@ def test_seed_titles_consistent():
 
 def _rec(label, fav, ends, priority=None):
     if priority is None:
-        priority = label in ("Cricket", "IPL")
+        priority = (label == "IPL")  # revised rule: only IPL is priority
     return {"sport_label": label, "favorite_pct": fav,
             "ends_in_minutes": ends, "is_priority": priority}
 
 
 def test_ipl_pinned_top():
-    print("\n[IPL pin] IPL always sorts above everything, regardless of odds")
+    print("\n[IPL pin] IPL always first; everything else is pure favorite order")
     ipl_low = _rec("IPL", 55, 120)
     cricket_high = _rec("Cricket", 99, 30)
     tennis_high = _rec("Tennis", 98, 10)
-    mlb = _rec("MLB", 90, 200, priority=False)
+    mlb = _rec("MLB", 90, 200)
     order = sorted([tennis_high, cricket_high, mlb, ipl_low], key=k._event_sort_key)
     labels = [r["sport_label"] for r in order]
-    check(labels[0] == "IPL", f"IPL first even at 55% vs Cricket 99% (got {labels})")
-    check(labels[1] == "Cricket", f"Cricket (priority) second (got {labels})")
-    check(labels.index("Tennis") < labels.index("MLB") or True,
-          "non-priority below priority")
-    check(labels[-1] in ("Tennis", "MLB"), f"non-priority last (got {labels})")
+    check(labels[0] == "IPL", f"IPL first even @55% vs Cricket @99% (got {labels})")
+    # Non-IPL is NOT special anymore — strictly favorite % desc
+    check(labels[1:] == ["Cricket", "Tennis", "MLB"],
+          f"rest ordered purely by favorite% 99/98/90 (got {labels})")
+    # Cricket has no privilege: a higher-fav Tennis beats a lower-fav Cricket
+    t99, c95 = _rec("Tennis", 99, 10), _rec("Cricket", 95, 10)
+    check(sorted([c95, t99], key=k._event_sort_key) == [t99, c95],
+          "Tennis @99 beats Cricket @95 (cricket no longer privileged)")
 
     # Two IPL games: higher favorite first, then ending soonest
     a = _rec("IPL", 70, 90)
