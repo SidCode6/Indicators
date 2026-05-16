@@ -86,9 +86,13 @@ ACTIVE_LIVE_SPORTS_SERIES = [
     # Tennis
     "KXATPMATCH", "KXATPCHALLENGERMATCH", "KXATPSETWINNER", "KXITFMATCH",
     "KXWTAGAME",
-    # Cricket (priority per user)
+    # Cricket (priority per user). KXT20MATCH/KXWT20MATCH are the
+    # associate/regional men's & women's T20 circuits (Vanuatu, Indonesia,
+    # Fiji, ...) — a SEPARATE series from KXCRICKETT20IMATCH (full-member
+    # T20Is), and previously absent, so those games never reached the sidebar.
     "KXIPLGAME", "KXCRICKETT20IMATCH", "KXPSLGAME", "KXCOUNTYCHAMPMATCH",
     "KXBBLCRICKET",
+    "KXT20MATCH", "KXWT20MATCH", "KXCRICKETWOMENT20IMATCH",
     # Soccer
     "KXEPLGAME", "KXBUNDESLIGAGAME", "KXLIGUE1GAME", "KXLALIGAGAME",
     "KXSERIEAGAME", "KXMLSGAME", "KXBRASILEIROGAME", "KXSAUDIPLGAME",
@@ -166,6 +170,10 @@ SPORT_LABEL_RULES = [
     ("KXWT20",            "Cricket"),
     ("KXPSL",             "Cricket"),
     ("KXBBLCRICKET",      "Cricket"),
+    # General cricket prefix — also fixes KXCRICKETT20IMATCH, which was
+    # already queried but matched NO rule (label "", so it silently lost
+    # priority and was subjected to the 83-98% odds gate).
+    ("KXCRICKET",         "Cricket"),
 
     ("KXATPMATCH",        "Tennis"),
     ("KXATPCHALLENGER",   "Tennis"),
