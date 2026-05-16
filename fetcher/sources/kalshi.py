@@ -1,40 +1,27 @@
 """Live Kalshi sports markets — narrow filter for the Macro-tab sidebar.
 
-Pulls the public Kalshi API (no auth required), via the events endpoint
-with ``with_nested_markets=true``. Surfaces only markets where the
-underlying game is *currently being played*.
+Pulls the public Kalshi API (no auth) via the events endpoint with
+``with_nested_markets=true``, surfacing only currently-live games.
 
-"Currently live" definition
----------------------------
-A market is live iff:
-    occurrence_datetime <= now <= occurrence_datetime + sport_duration
+The complete, authoritative spec for this module — filter chain,
+live-detection model, sport labeling, Cricket/IPL priority, URL slug
+rule, rate-limiting and the kalshi.json shape — is KALSHI_SPEC.md at
+the repo root. Read it before changing anything here.
 
-`occurrence_datetime` is Kalshi's scheduled start. We add a sport-specific
-buffer (e.g. 2.5h tennis, 4h cricket) to estimate when the game should be
-over. Games that haven't started yet are excluded; games whose buffer has
-elapsed are excluded.
-
-Display
--------
-For each live event:
-- If the event has exactly 2 markets (head-to-head matchup), we emit both
-  sides so the sidebar pill shows e.g. "91% Sinner / 9% Medvedev".
-- For multi-outcome events (race, tournament winner), we emit only the
-  highest YES bid (the dominant favorite).
-
-Special rules per user
-----------------------
-- Cricket / IPL live games are ALWAYS surfaced when live, regardless of
-  the YES-bid range, and they're sorted at the top of the list.
-- All other sports require favorite YES bid in [83%, 98%].
-
-URL
----
-We can't reliably verify Kalshi event-page URL slugs from server-side
-(Vercel anti-bot blocks crawls). To avoid the user's earlier mismatch
-problem (multiple pills resolving to the same wrong page), each pill
-links to the series-page URL — guaranteed to land in the right series
-where the user can see the live event listed and click through.
+Quick orientation (see KALSHI_SPEC.md for the full rules):
+- Live iff  (occurrence_datetime - pre_game_buffer) <= now <=
+  (occurrence_datetime + sport_duration).  `occurrence_datetime` is
+  Kalshi's *scheduled* start (often wrong by hours); the sport-specific
+  PRE_GAME_BUFFER_MINUTES (tennis 150m, default 60m) absorbs the slop on
+  the start side, SPORT_DURATION_MINUTES bounds the end side. See
+  `_is_live_now`.
+- 2-market events emit both sides ("91% Sinner / 9% Medvedev");
+  multi-outcome events emit only the favorite.
+- Cricket/IPL: always shown when live (bypass the [83%,98%] gate),
+  sorted to the top. All other sports need the favorite in [83%,98%].
+- Each pill links to the canonical event page built by
+  `_build_event_url` (/markets/{series}/{slug}/{event}); falls back to
+  the series page only when the series title is unknown.
 """
 
 from __future__ import annotations
@@ -42,6 +29,7 @@ from __future__ import annotations
 import concurrent.futures
 import json
 import os
+import threading
 import time
 import urllib.request
 from datetime import datetime, timezone
@@ -69,6 +57,84 @@ OUTPUT_PATH = os.path.join(PROJECT_DIR, "public", "kalshi.json")
 SERIES_TITLE_CACHE_PATH = os.path.join(FETCHER_DIR, ".kalshi_series_titles.json")
 SERIES_TITLE_CACHE_TTL_SECONDS = 7 * 24 * 3600
 
+# Committed warm-start seed of {series_ticker: title}. The runtime JSON
+# cache is gitignored and Railway's FS is ephemeral, so without this every
+# deploy cold-fetched ~70 /series titles in a burst and tripped Kalshi's
+# rate limit (the post-deploy 429s). With this, _ensure_titles only fetches
+# tickers NOT already seeded (e.g. newly added series). Titles below were
+# verified live against the Kalshi API on 2026-05-16; the on-disk cache
+# (when fresh) still overrides any entry whose title later changes.
+SEED_SERIES_TITLES = {
+    'KXABAGAME': 'ABA League Game',
+    'KXAFCACGAME': 'AFC Asia Cup Game',
+    'KXALEAGUEGAME': 'Australian A League Game',
+    'KXARGLNBGAME': 'Liga Nacional de Basquetbol Game',
+    'KXATPCHALLENGERMATCH': 'Challenger ATP ',
+    'KXATPMATCH': 'ATP Tennis Match',
+    'KXBELGIANPLGAME': 'Belgian Pro League Game',
+    'KXBOXINGFIGHT': 'Boxing fight winner',
+    'KXBRASILEIROGAME': 'Brasileiro Serie A Game',
+    'KXBUNDESLIGAGAME': 'Bundesliga Game',
+    'KXCODGAME': 'Call of Duty Games',
+    'KXCONMEBOLLIBGAME': 'CONMEBOL Libertadores Game',
+    'KXCOUNTYCHAMPMATCH': 'County Championship Cricket Match',
+    'KXCRICKETT20IMATCH': 'Cricket T20I Match',
+    'KXCRICKETWOMENT20IMATCH': 'Cricket Women T20I Match',
+    'KXCS2GAME': 'Counter-Strike 2 Game',
+    'KXDFBPOKALGAME': 'DFB Pokal Game',
+    'KXDOTA2GAME': 'Dota 2 Game',
+    'KXEFLL1GAME': 'EFL League One Game',
+    'KXELITESERIENGAME': 'Eliteserien Game',
+    'KXEPLGAME': 'English Premier League Game',
+    'KXEREDIVISIEGAME': 'Eredivisie Game',
+    'KXEUROCUPGAME': 'EuroCup Basketball Game',
+    'KXEUROLEAGUEGAME': 'Euroleague Game',
+    'KXF1RACE': 'F1 Race',
+    'KXFIBAGAME': 'FIBA Game',
+    'KXGBLGAME': 'GBL Basketball Game',
+    'KXINDYCARRACE': 'IndyCar Race',
+    'KXINTLFRIENDLYGAME': 'International Friendly Game',
+    'KXIPLGAME': 'Indian Premier League Cricket Game',
+    'KXITFMATCH': "ITF Men's Match",
+    'KXLALIGAGAME': 'La Liga Game',
+    'KXLIGAMXGAME': 'Liga MX Game',
+    'KXLIGAPORTUGALGAME': 'Liga Portugal Game',
+    'KXLIGUE1GAME': 'Ligue 1 Game',
+    'KXLNBELITEGAME': 'LNB Elite Game',
+    'KXLOLGAME': 'League of Legends Game',
+    'KXMLBGAME': 'Professional Baseball Game',
+    'KXMLSGAME': 'Major League Soccer Game',
+    'KXMOTOGPRACE': 'Moto GP Race',
+    'KXNASCARRACE': 'NASCAR Race',
+    'KXNBAGAME': 'Professional Basketball Game',
+    'KXNBLGAME': 'NBL Basketball Game',
+    'KXNCAABBGAME': 'College Baseball Game',
+    'KXNCAAFGAME': 'College Football Game',
+    'KXNCAAMBGAME': "Men's College Basketball Men's Game",
+    'KXNCAAWBGAME': "College Basketball Women's Game",
+    'KXNHLGAME': 'NHL Game',
+    'KXNWSLGAME': 'NWSL Game',
+    'KXNZNBLGAME': 'New Zealand NBL Game',
+    'KXPSLGAME': 'Pakistan Super League Cricket Game',
+    'KXR6GAME': 'R6 Game',
+    'KXROCKETLEAGUEGAME': 'Rocket League Game',
+    'KXRUGBYESLMATCH': 'England Super League Rugby Match',
+    'KXRUGBYFRA14MATCH': 'Rugby French 14 Match',
+    'KXSAILGPRACE': 'Sail GP Race',
+    'KXSAUDIPLGAME': 'Saudi Pro League Game',
+    'KXSERIEAGAME': 'Serie A Game',
+    'KXSUPERLIGGAME': 'Turkish Super Lig Game',
+    'KXT20MATCH': "Men's T20 Cricket Match",
+    'KXUAEPLGAME': 'UAE Pro League',
+    'KXUECLGAME': 'UEFA Conference League Game',
+    'KXUFCFIGHT': 'UFC Fight',
+    'KXVALORANTGAME': 'Valorant game winner',
+    'KXVTBGAME': 'VTB United League Game',
+    'KXWNBAGAME': "Women's Pro Basketball Game",
+    'KXWT20MATCH': "Women's T20 Match",
+    'KXWTAGAME': 'WTA Tennis Winner',
+}
+
 # Filter knobs
 MIN_FAVORITE_PCT = 0.83
 MAX_FAVORITE_PCT = 0.98
@@ -84,27 +150,31 @@ LIVE_GAME_SUFFIXES = ("GAME", "MATCH", "FIGHT", "RACE")
 # If new sports series appear on Kalshi we can add them here.
 ACTIVE_LIVE_SPORTS_SERIES = [
     # Tennis
-    "KXATPMATCH", "KXATPCHALLENGERMATCH", "KXATPSETWINNER", "KXITFMATCH",
+    "KXATPMATCH", "KXATPCHALLENGERMATCH", "KXITFMATCH",
     "KXWTAGAME",
-    # Cricket (priority per user). KXT20MATCH/KXWT20MATCH are the
-    # associate/regional men's & women's T20 circuits (Vanuatu, Indonesia,
-    # Fiji, ...) — a SEPARATE series from KXCRICKETT20IMATCH (full-member
-    # T20Is), and previously absent, so those games never reached the sidebar.
+    # Cricket (priority per user). All end in GAME/MATCH so they pass the
+    # game-outcome suffix rule, and all resolve to a "Cricket"/"IPL" label
+    # (see SPORT_LABEL_RULES) so they bypass the 83-98% odds gate.
+    # KXT20MATCH/KXWT20MATCH/KXCRICKETWOMENT20IMATCH = associate/regional
+    # men's & women's T20 circuits (verified live on the Kalshi API).
+    # NOTE: Big Bash League (Australian T20, ~Dec-Feb) has NO game-outcome
+    # series on Kalshi as of 2026-05-16 (off-season). Re-add its series here
+    # when it appears. Do NOT use "KXBBLGAME" — that ticker is Bundesliga
+    # *Basketball*, not Big Bash cricket.
     "KXIPLGAME", "KXCRICKETT20IMATCH", "KXPSLGAME", "KXCOUNTYCHAMPMATCH",
-    "KXBBLCRICKET",
     "KXT20MATCH", "KXWT20MATCH", "KXCRICKETWOMENT20IMATCH",
     # Soccer
     "KXEPLGAME", "KXBUNDESLIGAGAME", "KXLIGUE1GAME", "KXLALIGAGAME",
     "KXSERIEAGAME", "KXMLSGAME", "KXBRASILEIROGAME", "KXSAUDIPLGAME",
     "KXEREDIVISIEGAME", "KXNWSLGAME", "KXUECLGAME", "KXEUROCUPGAME",
     "KXUAEPLGAME", "KXCONMEBOLLIBGAME", "KXLIGAPORTUGALGAME",
-    "KXELITESERIENGAME", "KXSUPERLIGGAME", "KXBELGIANPL",
+    "KXELITESERIENGAME", "KXSUPERLIGGAME", "KXBELGIANPLGAME",
     "KXALEAGUEGAME", "KXLIGAMXGAME", "KXEFLL1GAME", "KXDFBPOKALGAME",
-    "KXAFCACGAME", "KXNTLFRIENDLY", "KXINTLFRIENDLYGAME",
+    "KXAFCACGAME", "KXINTLFRIENDLYGAME",
     # MLB / NBA / NHL / NFL
     "KXMLBGAME", "KXNBAGAME", "KXNHLGAME", "KXWNBAGAME",
     # UFC / Boxing
-    "KXUFCFIGHT", "KXBOXING",
+    "KXUFCFIGHT", "KXBOXINGFIGHT",
     # Esports
     "KXR6GAME", "KXDOTA2GAME", "KXLOLGAME", "KXCS2GAME",
     "KXVALORANTGAME", "KXCODGAME", "KXROCKETLEAGUEGAME",
@@ -119,8 +189,10 @@ ACTIVE_LIVE_SPORTS_SERIES = [
     "KXNBLGAME", "KXFIBAGAME", "KXEUROLEAGUEGAME", "KXABAGAME",
     "KXARGLNBGAME", "KXVTBGAME", "KXLNBELITEGAME",
     "KXNZNBLGAME", "KXGBLGAME",
-    # Other
-    "KXSUMOWIN", "KXLPGATOUR",
+    # (Removed KXSUMOWIN / KXLPGATOUR / KXATPSETWINNER / KXNTLFRIENDLY:
+    # no head-to-head game-outcome series exists for these on Kalshi —
+    # they were tournament/set/futures markets that can never pass the
+    # GAME/MATCH/FIGHT/RACE suffix rule. Verified live 2026-05-16.)
 ]
 
 # Estimated typical game/match duration in minutes — used to estimate
@@ -165,15 +237,15 @@ DEFAULT_DURATION_MINUTES = 180
 # Series-ticker prefix -> human sport label. Order matters: more-specific
 # prefixes first (e.g. KXIPLGAME before KX).
 SPORT_LABEL_RULES = [
+    # --- Cricket / IPL (priority). Order: most-specific first. Every
+    # cricket series in ACTIVE_LIVE_SPORTS_SERIES must resolve here so
+    # is_priority is true and it bypasses the 83-98% odds gate. ---
     ("KXIPL",             "IPL"),       # special-cased for priority
-    ("KXT20",             "Cricket"),
-    ("KXWT20",            "Cricket"),
+    ("KXT20",             "Cricket"),   # KXT20MATCH (men's assoc. T20)
+    ("KXWT20",            "Cricket"),   # KXWT20MATCH (women's T20)
     ("KXPSL",             "Cricket"),
-    ("KXBBLCRICKET",      "Cricket"),
-    # General cricket prefix — also fixes KXCRICKETT20IMATCH, which was
-    # already queried but matched NO rule (label "", so it silently lost
-    # priority and was subjected to the 83-98% odds gate).
-    ("KXCRICKET",         "Cricket"),
+    ("KXCRICKET",         "Cricket"),   # KXCRICKETT20IMATCH, KXCRICKETWOMEN*
+    ("KXCOUNTYCHAMP",     "Cricket"),   # KXCOUNTYCHAMPMATCH (was unlabeled)
 
     ("KXATPMATCH",        "Tennis"),
     ("KXATPCHALLENGER",   "Tennis"),
@@ -219,6 +291,10 @@ SPORT_LABEL_RULES = [
     ("KXCONMEBOL",        "Soccer"),
     ("KXLIGAMX",          "Soccer"),
     ("KXUAEPL",           "Soccer"),
+    ("KXEFLL1",           "Soccer"),   # EFL League One Game
+    ("KXDFBPOKAL",        "Soccer"),   # DFB Pokal Game
+    ("KXAFCAC",           "Soccer"),   # AFC Asia Cup Game
+    ("KXINTLFRIENDLY",    "Soccer"),   # International Friendly Game
 
     ("KXUFC",             "UFC"),
     ("KXBOXING",          "Boxing"),
@@ -245,6 +321,10 @@ SPORT_LABEL_RULES = [
     ("KXEUROCUP",         "Basketball"),
     ("KXABA",             "Basketball"),
     ("KXLNB",             "Basketball"),
+    ("KXNBL",             "Basketball"),   # NBL Basketball Game (AU)
+    ("KXFIBA",            "Basketball"),   # FIBA Game
+    ("KXARGLNB",          "Basketball"),   # Liga Nacional de Basquetbol
+    ("KXVTB",             "Basketball"),   # VTB United League Game
 
     ("KXNCAAMB",          "NCAA Basketball"),
     ("KXNCAAWB",          "NCAA Basketball"),
@@ -336,17 +416,23 @@ def _parse_dollars(s) -> float:
 
 
 def _load_series_title_cache() -> dict:
-    """Return cached {series_ticker: title} map. Empty dict if missing or stale."""
+    """Return {series_ticker: title}, always seeded with the committed
+    SEED_SERIES_TITLES so a fresh Railway container does not cold-fetch
+    ~70 titles in a burst. A fresh on-disk cache overrides the seed for
+    any title that has since changed."""
+    seed = dict(SEED_SERIES_TITLES)
     try:
         if not os.path.exists(SERIES_TITLE_CACHE_PATH):
-            return {}
+            return seed
         age = time.time() - os.path.getmtime(SERIES_TITLE_CACHE_PATH)
         if age > SERIES_TITLE_CACHE_TTL_SECONDS:
-            return {}
+            return seed
         with open(SERIES_TITLE_CACHE_PATH) as f:
-            return json.load(f) or {}
+            disk = json.load(f) or {}
+        seed.update(disk)
+        return seed
     except Exception:
-        return {}
+        return seed
 
 
 def _save_series_title_cache(titles: dict) -> None:
@@ -381,18 +467,19 @@ def _ensure_titles(cache: dict, series_tickers: list[str]) -> dict:
 
 
 def _slugify_series_title(title: str) -> str:
-    """Kalshi's URL slug rule, derived empirically from real URLs:
-       apostrophes are deleted, then title.lower() with spaces -> '-'.
-       e.g. "Men's T20 Cricket Match" -> "mens-t20-cricket-match"
-       (proven by a user-shared KXT20MATCH event URL).
-    Trailing spaces become trailing dashes (yes, really — Kalshi preserves them).
+    """Kalshi's URL slug rule (spec KALSHI_SPEC.md §8), derived from real
+    URLs: title.lower() with spaces -> '-'. Trailing spaces become
+    trailing dashes (Kalshi preserves them).
+
+    OPEN QUESTION (unverified): for a series whose title contains an
+    apostrophe (e.g. "Men's T20 Cricket Match") this yields
+    "men's-t20-cricket-match" with a literal apostrophe. Whether Kalshi's
+    real web slug keeps or strips it is UNKNOWN — kalshi.com pages are
+    Vercel-anti-bot (§2) so the rendered slug cannot be verified
+    server-side. Do not add punctuation handling until confirmed against
+    a real user-supplied Kalshi URL for a Men's/Women's series.
     """
-    return (
-        title.lower()
-        .replace("'", "")
-        .replace("’", "")  # curly apostrophe, defensive
-        .replace(" ", "-")
-    )
+    return title.lower().replace(" ", "-")
 
 
 def _build_event_url(event_ticker: str | None,
@@ -487,7 +574,10 @@ def _select_event_sides(event_markets: list[dict]) -> list[dict]:
 
 
 # Track most recent error so the orchestrator can surface it once per run.
+# Mutated from parallel worker threads -> guard with a lock so the count
+# is accurate (the bare += was a lossy read-modify-write under contention).
 _LAST_ERROR: dict = {"count": 0, "sample": ""}
+_LAST_ERROR_LOCK = threading.Lock()
 
 
 def _fetch_series_events(series_ticker: str) -> list[dict]:
@@ -506,10 +596,66 @@ def _fetch_series_events(series_ticker: str) -> list[dict]:
     except Exception as e:
         # Record one sample error per run so the operator can debug
         # without flooding logs from 70 parallel failures.
-        _LAST_ERROR["count"] += 1
-        if not _LAST_ERROR["sample"]:
-            _LAST_ERROR["sample"] = f"{type(e).__name__}: {e}"
+        with _LAST_ERROR_LOCK:
+            _LAST_ERROR["count"] += 1
+            if not _LAST_ERROR["sample"]:
+                _LAST_ERROR["sample"] = f"{type(e).__name__}: {e}"
         return []
+
+
+def _evaluate_event(e: dict, title_cache: dict) -> dict | None:
+    """Apply the live + odds filter to ONE event. Returns the output
+    record, or None if the event should not be shown. Pure per-event
+    logic so the caller can isolate a single bad event's failure."""
+    # Defensive: re-check category (should always be Sports given our
+    # series list, but the API could change).
+    if e.get("category") != "Sports":
+        return None
+    series_ticker = e.get("series_ticker") or ""
+    if not _is_game_outcome_series(series_ticker):
+        return None
+    sport_label = _sport_label_for_series(series_ticker)
+    is_priority = sport_label in ("Cricket", "IPL")
+
+    markets = e.get("markets") or []
+    # All markets in an event share occurrence/expiration; use the first
+    # populated one as the event's start time.
+    sample_market = next((m for m in markets if m.get("occurrence_datetime")), None)
+    occ_dt = _parse_iso((sample_market or {}).get("occurrence_datetime"))
+    if not _is_live_now(occ_dt, sport_label):
+        return None
+
+    sides = _select_event_sides(markets)
+    if not sides:
+        return None
+
+    top_pct = sides[0]["yes_pct"]
+    # Cricket / IPL pass the odds gate unconditionally; everything else
+    # needs the favorite within the user's window.
+    if not is_priority:
+        if not (MIN_FAVORITE_PCT * 100 <= top_pct <= MAX_FAVORITE_PCT * 100):
+            return None
+
+    return {
+        "event_ticker": e.get("event_ticker"),
+        "series_ticker": series_ticker,
+        "sport_label": sport_label,
+        "is_priority": is_priority,
+        # Title is the matchup. Fall back to building it from the sides
+        # if the event doesn't have a title.
+        "event_title": (e.get("title") or "").strip()
+            or " vs ".join(s["name"] for s in sides if s["name"])
+            or series_ticker,
+        "competition": ((e.get("product_metadata") or {}).get("competition") or "").strip(),
+        "sides": sides,
+        "favorite_pct": top_pct,
+        "ends_in_minutes": _ends_in_minutes(occ_dt, sport_label),
+        "url": _build_event_url(
+            e.get("event_ticker"),
+            series_ticker,
+            title_cache.get(series_ticker, ""),
+        ),
+    }
 
 
 def fetch() -> dict | None:
@@ -542,56 +688,18 @@ def fetch() -> dict | None:
               f"series fetches errored. sample: {_LAST_ERROR['sample']}")
 
     # Phase 2: filter to live + odds window + emit matchup sides.
+    # Each event is isolated — a single malformed event must never abort
+    # the whole sidebar for this cycle (mirrors _fetch_series_events).
     for e in all_events:
-        # Defensive: re-check category (should always be Sports given our
-        # series list, but the API could change).
-        if e.get("category") != "Sports":
+        try:
+            rec = _evaluate_event(e, title_cache)
+        except Exception as ex:
+            with _LAST_ERROR_LOCK:
+                if not _LAST_ERROR["sample"]:
+                    _LAST_ERROR["sample"] = f"event {type(ex).__name__}: {ex}"
             continue
-        series_ticker = e.get("series_ticker") or ""
-        if not _is_game_outcome_series(series_ticker):
-            continue
-        sport_label = _sport_label_for_series(series_ticker)
-        is_priority = sport_label in ("Cricket", "IPL")
-
-        markets = e.get("markets") or []
-        # All markets in an event share occurrence/expiration; use the first
-        # populated one as the event's start time.
-        sample_market = next((m for m in markets if m.get("occurrence_datetime")), None)
-        occ_dt = _parse_iso((sample_market or {}).get("occurrence_datetime"))
-        if not _is_live_now(occ_dt, sport_label):
-            continue
-
-        sides = _select_event_sides(markets)
-        if not sides:
-            continue
-
-        top_pct = sides[0]["yes_pct"]
-        # Cricket / IPL pass the odds gate unconditionally; everything
-        # else needs the favorite within the user's window.
-        if not is_priority:
-            if not (MIN_FAVORITE_PCT * 100 <= top_pct <= MAX_FAVORITE_PCT * 100):
-                continue
-
-        qualified.append({
-            "event_ticker": e.get("event_ticker"),
-            "series_ticker": series_ticker,
-            "sport_label": sport_label,
-            "is_priority": is_priority,
-            # Title is the matchup. Fall back to building it from the sides
-            # if the event doesn't have a title.
-            "event_title": (e.get("title") or "").strip()
-                or " vs ".join(s["name"] for s in sides if s["name"])
-                or series_ticker,
-            "competition": ((e.get("product_metadata") or {}).get("competition") or "").strip(),
-            "sides": sides,
-            "favorite_pct": top_pct,
-            "ends_in_minutes": _ends_in_minutes(occ_dt, sport_label),
-            "url": _build_event_url(
-                e.get("event_ticker"),
-                series_ticker,
-                title_cache.get(series_ticker, ""),
-            ),
-        })
+        if rec is not None:
+            qualified.append(rec)
 
     # Sort: priority (cricket/IPL) first, then by favorite_pct desc, then
     # by earlier-ending first.
@@ -616,9 +724,34 @@ def fetch() -> dict | None:
     }
 
 
+def _is_total_fetch_failure(payload: dict) -> bool:
+    """True iff this cycle fetched NOTHING because of errors (Kalshi
+    rate-limited / blocked us), as opposed to the legitimate "fetched
+    plenty, none currently live" case (events_seen > 0)."""
+    errs = payload.get("errors") or {}
+    return payload.get("events_seen", 0) == 0 and errs.get("count", 0) > 0
+
+
 def write(payload: dict) -> bool:
     if not payload:
         return False
+
+    # Stale-value fallback (mirrors data.json philosophy): if this cycle
+    # got nothing due to fetch errors, keep the previous good events
+    # instead of blanking the sidebar. A normal "no live games" cycle
+    # (events_seen > 0, no errors) still writes through and clears it.
+    if _is_total_fetch_failure(payload):
+        try:
+            with open(OUTPUT_PATH) as f:
+                prev = json.load(f)
+            if prev.get("events"):
+                prev["errors"] = payload.get("errors")
+                prev["stale"] = True
+                prev["last_attempt_at"] = payload.get("fetched_at")
+                payload = prev
+        except Exception:
+            pass  # no/!unreadable previous file -> fall through, write fresh
+
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     tmp = OUTPUT_PATH + ".tmp"
     with open(tmp, "w") as f:
