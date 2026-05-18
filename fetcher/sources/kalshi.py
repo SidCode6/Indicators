@@ -246,7 +246,11 @@ MAX_OUTPUT_ITEMS = 15
 # threshold (independent of the unreliable timestamp), bounded by a
 # generous sanity window so a far-future pre-traded market can't leak.
 KALSHI_LIVE_MIN_ACTIVITY = 5000   # open_interest_fp or volume_fp (huge gap: noise ≤600, live ≥17k)
-KALSHI_LIVE_SANITY_HOURS = 12     # only apply the activity path within ±12h of occ
+# Activity path requires occurrence_datetime PRESENT and within ±this of
+# now. Observed live-match occ drift maxes ~4.6h (ITF) / ~5h (IPL), so 8h
+# gives margin while still excluding futures/long-dated markets (World
+# Cup games 27 days out / null occ) that carry huge pre-bet volume.
+KALSHI_LIVE_SANITY_HOURS = 8
 
 # Game-outcome series suffixes (not prop bets / awards / drafts).
 LIVE_GAME_SUFFIXES = ("GAME", "MATCH", "FIGHT", "RACE")
@@ -831,13 +835,20 @@ def _event_market_activity(markets: list[dict]) -> float:
 
 
 def _is_live_by_activity(occurrence_dt, markets: list[dict]) -> bool:
-    """True if the market is heavily traded (=> actually in play) within a
-    generous sanity window of its scheduled time. This is the robust path
-    for the common case where occurrence_datetime is hours wrong."""
+    """True ONLY for a heavily-traded market whose scheduled time is also
+    near now — i.e. a real match in play whose occurrence_datetime is
+    merely drifted by hours (ITF/IPL/Eliteserien failure mode).
+
+    A heavily-traded market with NO occurrence_datetime, or one many
+    hours/days away, is a futures/long-dated market (e.g. World Cup
+    games 27 days out accumulate huge pre-bet volume) — NOT live. Per
+    the explicit user rule, if we cannot confirm the match is happening
+    right now, it must NOT show: occ is required and must be within the
+    sanity window (no null-occ pass-through)."""
     if _event_market_activity(markets) < KALSHI_LIVE_MIN_ACTIVITY:
         return False
     if occurrence_dt is None:
-        return True  # no scheduled time but heavily traded -> it's live
+        return False  # cannot verify it's live now -> exclude (user rule)
     now = datetime.now(timezone.utc)
     return abs((now - occurrence_dt).total_seconds()) <= KALSHI_LIVE_SANITY_HOURS * 3600
 

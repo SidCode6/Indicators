@@ -33,7 +33,7 @@ An event must pass ALL of these to appear:
 
 ```
 live  iff   (occurrence_datetime − pre_game_buffer) ≤ now ≤ (occurrence_datetime + sport_duration)
-        OR   market_activity ≥ KALSHI_LIVE_MIN_ACTIVITY  (within ±12h sanity of occ)
+        OR   market_activity ≥ KALSHI_LIVE_MIN_ACTIVITY  AND  occ present AND |now−occ| ≤ 8h
 ```
 
 **Two independent paths (2026-05-18).** The time-window path alone kept
@@ -44,10 +44,16 @@ missing live games because `occurrence_datetime` is routinely wrong by
 `open_interest_fp`/`volume_fp` in the tens-to-hundreds of THOUSANDS for
 live matches, vs `0` for the ~146 not-yet-live scheduled ones (noise
 ≤ ~600). `_is_live_by_activity` treats `max(open_interest_fp,
-volume_fp, volume_24h_fp) ≥ KALSHI_LIVE_MIN_ACTIVITY` (5000) as live,
-bounded to ±`KALSHI_LIVE_SANITY_HOURS` (12h) of occ so a far-future
-pre-traded market can't leak. It is **additive** — the OR never hides a
-previously-shown event, only surfaces genuinely-live ones the timestamp
+volume_fp, volume_24h_fp) ≥ KALSHI_LIVE_MIN_ACTIVITY` (5000) as live —
+but ONLY if `occurrence_datetime` is **present and within ±8h** of now
+(`KALSHI_LIVE_SANITY_HOURS`). A heavily-traded market with a null or
+far-future occ is a **futures/long-dated** market (e.g. World Cup
+games 27 days out accumulate ~45k pre-bet OI) and is NOT live — these
+must be excluded (explicit user rule: if liveness can't be confirmed,
+do not show). Observed live-occ drift maxes ~4.6h (ITF) / ~5h (IPL),
+so 8h covers real drift with margin while excluding futures. It is
+**additive** — the OR never hides a previously-shown event, only
+surfaces genuinely-live ones the timestamp
 missed. The 83-98% favorite gate / IPL-priority still apply on top.
 
 **Why the timestamp is tricky:** Kalshi's API fields are unreliable for "is it live":

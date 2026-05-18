@@ -264,13 +264,22 @@ def test_activity_liveness():
     # IPL: heavy activity + any odds -> shown & priority
     out = k._evaluate_event(_act_event("KXIPLGAME", far, "0.4000", "0.6000", oi="90000"), {})
     check(out is not None and out["is_priority"], "IPL high-activity @40% -> SHOWN priority")
-    # Sanity bound: heavy activity but occ ~20h away -> NOT live (far future)
+    # occ within ±8h still works (ITF live drift ~4.6h; 6h = inside)
+    out = k._evaluate_event(_act_event("KXITFWMATCH", now + timedelta(hours=6),
+                                       "0.9500", "0.0400", oi="264787"), {})
+    check(out is not None, "occ +6h (<= 8h sanity) + heavy activity -> SHOWN")
+    # Sanity bound: heavy activity but occ ~20h away -> NOT live
     out = k._evaluate_event(_act_event("KXITFWMATCH", now + timedelta(hours=20),
                                        "0.9500", "0.0400", oi="264787"), {})
-    check(out is None, "heavy activity but occ +20h (> ±12h sanity) -> DROPPED")
-    # No occurrence_datetime at all + heavy activity -> live
-    out = k._evaluate_event(_act_event("KXITFWMATCH", None, "0.9500", "0.0400", oi="264787"), {})
-    check(out is not None, "no occ but heavy activity -> SHOWN")
+    check(out is None, "heavy activity but occ +20h (> 8h sanity) -> DROPPED")
+    # REGRESSION (user-reported): World-Cup-style futures — NO occurrence
+    # time + huge accumulated pre-bet volume. Must NOT show (not live now).
+    out = k._evaluate_event(_act_event("KXWCGAME", None, "0.9200", "0.0500", oi="45219"), {})
+    check(out is None, "World Cup occ=None + OI 45k @92% -> DROPPED (futures, not live)")
+    # Far-future scheduled (27 days) + huge volume -> still not live
+    out = k._evaluate_event(_act_event("KXWCGAME", now + timedelta(days=27),
+                                       "0.9200", "0.0500", oi="45219"), {})
+    check(out is None, "World Cup occ +27d + huge volume -> DROPPED (not live)")
     # helper parses *_fp strings; missing -> 0
     check(k._event_market_activity([{"open_interest_fp": "1234.5"}]) == 1234.5,
           "_event_market_activity parses open_interest_fp")
