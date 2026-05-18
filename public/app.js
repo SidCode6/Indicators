@@ -12,6 +12,20 @@ let btcChartInstance = null;
 let kalshiData = null;
 const KALSHI_REFRESH_INTERVAL = 60 * 1000; // 1 minute
 
+// New-event sound notification (subtle ping when a new live event appears).
+const KALSHI_SOUND_LS_KEY = 'kalshiSoundLevel';
+const KALSHI_SOUND_MAX = 4;                       // levels 0(mute)..4
+const KALSHI_SOUND_GAIN = [0, 0.05, 0.10, 0.16, 0.22]; // peak gain per level
+let kalshiSeenTickers = null;   // null until first successful render (no ping on first load)
+let kalshiAudioCtx = null;
+let kalshiSoundLevel = (function () {
+  try {
+    var v = parseInt(localStorage.getItem(KALSHI_SOUND_LS_KEY), 10);
+    if (!isNaN(v) && v >= 0 && v <= KALSHI_SOUND_MAX) return v;
+  } catch (e) { /* localStorage may be unavailable */ }
+  return 2; // sensible default: subtle but audible
+})();
+
 // User's NODE watchlist (must match server-side WATCHLIST in fetcher/node_etf/analyze.py)
 const NODE_WATCHLIST_TICKERS = ['HODL', 'MSTR', 'ASST', 'STRC'];
 
@@ -339,6 +353,68 @@ var currentChartTf = '24H';
 // KALSHI LIVE SPORTS SIDEBAR
 // ============================================================
 
+// Soft synthesized "ting" (no audio asset / no network). Guarded so a
+// sound failure can never break the sidebar.
+function _kalshiPlayPing() {
+  if (kalshiSoundLevel <= 0) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!kalshiAudioCtx) kalshiAudioCtx = new AC();
+    var ctx = kalshiAudioCtx;
+    if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
+    var now = ctx.currentTime;
+    var peak = KALSHI_SOUND_GAIN[kalshiSoundLevel] || 0.1;
+    [{ f: 1174.7, g: 1 }, { f: 2349.3, g: 0.35 }].forEach(function (p) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = p.f;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(peak * p.g, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.24);
+    });
+  } catch (e) { /* never let audio break the sidebar */ }
+}
+
+function _kalshiSoundIconSvg(muted) {
+  return '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">' +
+    '<path d="M3 6h2.5L9 3v10L5.5 10H3z"/>' +
+    (muted
+      ? '<path d="M11 5l4 6M15 5l-4 6" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/>'
+      : '<path d="M10.8 5.2a4 4 0 010 5.6M12.6 3.8a6.5 6.5 0 010 8.4" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/>') +
+    '</svg>';
+}
+
+function _kalshiRenderSoundControl() {
+  var btn = document.getElementById('kalshiSound');
+  if (!btn) return;
+  var lvl = kalshiSoundLevel;
+  var pips = '';
+  for (var i = 1; i <= KALSHI_SOUND_MAX; i++) {
+    pips += '<span class="ks-pip' + (i <= lvl ? ' on' : '') + '"></span>';
+  }
+  btn.innerHTML = _kalshiSoundIconSvg(lvl === 0) + '<span class="ks-pips">' + pips + '</span>';
+  btn.title = lvl === 0
+    ? 'New-event sound: muted (click to change)'
+    : 'New-event sound: level ' + lvl + '/' + KALSHI_SOUND_MAX + ' (click to change; lowest = mute)';
+}
+
+function initKalshiSoundControl() {
+  var btn = document.getElementById('kalshiSound');
+  if (!btn) return;
+  _kalshiRenderSoundControl();
+  btn.addEventListener('click', function () {
+    kalshiSoundLevel = (kalshiSoundLevel + 1) % (KALSHI_SOUND_MAX + 1);
+    try { localStorage.setItem(KALSHI_SOUND_LS_KEY, String(kalshiSoundLevel)); } catch (e) {}
+    _kalshiRenderSoundControl();
+    _kalshiPlayPing(); // user gesture also unlocks audio; previews the chosen level
+  });
+}
+
 async function loadKalshi() {
   try {
     var resp = await fetch('kalshi.json?t=' + Date.now());
@@ -377,6 +453,25 @@ function renderKalshi() {
   }
 
   var events = kalshiData.events || [];
+
+  // Ping when a genuinely new live event appears. First successful render
+  // only records the baseline (no ping for pre-existing events). Guarded
+  // so detection can never break the render.
+  try {
+    var currentTickers = {};
+    events.forEach(function (e) {
+      if (e && e.event_ticker) currentTickers[e.event_ticker] = 1;
+    });
+    if (kalshiSeenTickers !== null) {
+      var hasNew = false;
+      for (var tk in currentTickers) {
+        if (!kalshiSeenTickers[tk]) { hasNew = true; break; }
+      }
+      if (hasNew) _kalshiPlayPing();
+    }
+    kalshiSeenTickers = currentTickers;
+  } catch (e) { /* detection must never break the sidebar */ }
+
   if (events.length === 0) {
     list.innerHTML = '<p class="kalshi-empty">No live sports in the 83–98% range right now. (Cricket games shown automatically when live.)</p>';
   } else {
@@ -1706,6 +1801,7 @@ document.addEventListener('DOMContentLoaded', function() {
   loadNodeData();
   loadBtcChart();
   loadKalshi();
+  initKalshiSoundControl();
   setInterval(loadData, REFRESH_INTERVAL);
   setInterval(loadNodeData, REFRESH_INTERVAL);
   setInterval(loadBtcChart, REFRESH_INTERVAL);

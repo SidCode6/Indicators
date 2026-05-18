@@ -323,6 +323,53 @@ img, svg {
 
 .kalshi-source:hover { color: var(--text-primary); }
 
+/* New-event sound control — subtle, theme-matching, no layout disruption */
+.kalshi-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.kalshi-sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  padding: 2px 3px;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 0;
+  border-radius: 4px;
+}
+
+.kalshi-sound:hover { color: var(--text-primary); }
+
+.kalshi-sound svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+.kalshi-sound .ks-pips {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.kalshi-sound .ks-pip {
+  width: 2px;
+  height: 3px;
+  background: currentColor;
+  opacity: 0.25;
+  border-radius: 1px;
+}
+
+.kalshi-sound .ks-pip.on { opacity: 0.95; }
+.kalshi-sound .ks-pip:nth-child(2) { height: 5px; }
+.kalshi-sound .ks-pip:nth-child(3) { height: 7px; }
+.kalshi-sound .ks-pip:nth-child(4) { height: 9px; }
+
 .kalshi-list {
   display: flex;
   flex-direction: column;
