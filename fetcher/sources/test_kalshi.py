@@ -227,6 +227,56 @@ def _rec(label, fav, ends, priority=None):
             "ends_in_minutes": ends, "is_priority": priority}
 
 
+def _act_event(series, occ_dt, fav="0.9500", other="0.0400", oi="0"):
+    iso = occ_dt.strftime("%Y-%m-%dT%H:%M:%SZ") if occ_dt else None
+    def mk(sub, bid):
+        m = {"yes_sub_title": sub, "yes_bid_dollars": bid,
+             "ticker": series + "-" + sub, "open_interest_fp": oi,
+             "volume_fp": oi, "volume_24h_fp": oi}
+        if iso:
+            m["occurrence_datetime"] = iso
+        return m
+    return {"category": "Sports", "series_ticker": series,
+            "event_ticker": series + "-T", "title": "A vs B",
+            "markets": [mk("A", fav), mk("B", other)]}
+
+
+def test_activity_liveness():
+    print("\n[activity liveness] occurrence_datetime drift no longer hides live games")
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    far = now + timedelta(minutes=276)   # like the real ITF: occ 4.6h FUTURE
+    # The exact failing case: live ITF, occ +4.6h, in-range, HEAVY activity
+    out = k._evaluate_event(_act_event("KXITFWMATCH", far, "0.9500", "0.0400", oi="264787"), {})
+    check(out is not None, "ITF occ +276m but OI 264k & 95% -> SHOWN (was hidden)")
+    # Same timing but NO trading activity -> stays hidden (not live)
+    out = k._evaluate_event(_act_event("KXITFWMATCH", far, "0.9500", "0.0400", oi="0"), {})
+    check(out is None, "ITF occ +276m, zero activity -> DROPPED (correctly not live)")
+    # Noise activity (below threshold) -> not live
+    out = k._evaluate_event(_act_event("KXITFWMATCH", far, "0.9500", "0.0400", oi="571"), {})
+    check(out is None, "activity 571 (< 5000 threshold) -> DROPPED (pre-market noise)")
+    # Old time-window path still works WITHOUT activity (additive, no regression)
+    out = k._evaluate_event(_act_event("KXATPMATCH", now, "0.9000", "0.0800", oi="0"), {})
+    check(out is not None, "in-window match, zero activity -> still SHOWN (time path intact)")
+    # Activity path still respects the 83-98 gate for non-IPL
+    out = k._evaluate_event(_act_event("KXITFWMATCH", far, "0.5400", "0.4400", oi="42048"), {})
+    check(out is None, "live (high activity) but fav 54% -> DROPPED (below gate)")
+    # IPL: heavy activity + any odds -> shown & priority
+    out = k._evaluate_event(_act_event("KXIPLGAME", far, "0.4000", "0.6000", oi="90000"), {})
+    check(out is not None and out["is_priority"], "IPL high-activity @40% -> SHOWN priority")
+    # Sanity bound: heavy activity but occ ~20h away -> NOT live (far future)
+    out = k._evaluate_event(_act_event("KXITFWMATCH", now + timedelta(hours=20),
+                                       "0.9500", "0.0400", oi="264787"), {})
+    check(out is None, "heavy activity but occ +20h (> ±12h sanity) -> DROPPED")
+    # No occurrence_datetime at all + heavy activity -> live
+    out = k._evaluate_event(_act_event("KXITFWMATCH", None, "0.9500", "0.0400", oi="264787"), {})
+    check(out is not None, "no occ but heavy activity -> SHOWN")
+    # helper parses *_fp strings; missing -> 0
+    check(k._event_market_activity([{"open_interest_fp": "1234.5"}]) == 1234.5,
+          "_event_market_activity parses open_interest_fp")
+    check(k._event_market_activity([{}]) == 0.0, "missing activity fields -> 0")
+
+
 def test_maximal_coverage():
     print("\n[maximal coverage 2026-05-16] missing series added + mislabels fixed")
     check(len(k.ACTIVE_LIVE_SPORTS_SERIES) >= 160,
@@ -360,6 +410,7 @@ if __name__ == "__main__":
         test_total_fetch_failure_logic, test_write_stale_fallback,
         test_evaluate_event_isolation, test_seed_titles_consistent,
         test_ipl_never_hidden, test_ipl_pinned_top, test_maximal_coverage,
+        test_activity_liveness,
     ]:
         fn()
     print(f"\n{'='*52}")

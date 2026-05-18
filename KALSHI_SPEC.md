@@ -32,10 +32,25 @@ An event must pass ALL of these to appear:
 ## 4. "Currently live" detection (the part that causes confusion)
 
 ```
-live  iff  (occurrence_datetime − pre_game_buffer)  ≤  now  ≤  (occurrence_datetime + sport_duration)
+live  iff   (occurrence_datetime − pre_game_buffer) ≤ now ≤ (occurrence_datetime + sport_duration)
+        OR   market_activity ≥ KALSHI_LIVE_MIN_ACTIVITY  (within ±12h sanity of occ)
 ```
 
-**Why this is tricky:** Kalshi's API fields are unreliable for "is it live":
+**Two independent paths (2026-05-18).** The time-window path alone kept
+missing live games because `occurrence_datetime` is routinely wrong by
+*hours* (live ITF matches observed with occ 4.6h in the future; live IPL
+~3.5h off). Per-sport buffer bumps were whack-a-mole. The robust path:
+**market activity**. An actually-in-play market is heavily traded —
+`open_interest_fp`/`volume_fp` in the tens-to-hundreds of THOUSANDS for
+live matches, vs `0` for the ~146 not-yet-live scheduled ones (noise
+≤ ~600). `_is_live_by_activity` treats `max(open_interest_fp,
+volume_fp, volume_24h_fp) ≥ KALSHI_LIVE_MIN_ACTIVITY` (5000) as live,
+bounded to ±`KALSHI_LIVE_SANITY_HOURS` (12h) of occ so a far-future
+pre-traded market can't leak. It is **additive** — the OR never hides a
+previously-shown event, only surfaces genuinely-live ones the timestamp
+missed. The 83-98% favorite gate / IPL-priority still apply on top.
+
+**Why the timestamp is tricky:** Kalshi's API fields are unreliable for "is it live":
 
 - `expected_expiration_time` is **NOT the end time** — for most sports it's the *scheduled start*. Never use it for live detection.
 - `occurrence_datetime` is the **originally-scheduled start**, NOT when the match actually started. Real matches drift ±2-3 hours: they start *early* when a prior court match ends quickly, *late* on delays. We've seen tennis matches clearly playing on Kalshi's UI (live scores visible) while the API's `occurrence_datetime` is still 50+ minutes in the future.
@@ -55,7 +70,7 @@ So a tennis match scheduled to start in ≤150 min is treated as live (it's usua
 
 **`sport_duration`** = `SPORT_DURATION_MINUTES` table (Tennis 240, Cricket 300, **IPL 360**, Soccer 150, NBA 180, MLB 240, NFL 240, UFC 120, Esports 180, NASCAR 300, etc.; default 180). After `occurrence + duration` elapses, the game is assumed over and drops off.
 
-If you ever see "a live match isn't showing": it's almost always this — Kalshi's `occurrence_datetime` is stale and the match is outside the buffer. Widen that sport's buffer in `PRE_GAME_BUFFER_MINUTES`.
+If you ever see "a live match isn't showing": first check market activity (`open_interest_fp`/`volume_fp`) — the activity path (§ above) should catch it regardless of the stale timestamp. Do **not** just keep widening `PRE_GAME_BUFFER_MINUTES` (that was the old whack-a-mole; the activity path replaced it). Buffers now only matter for genuinely low-volume live events with an accurate occ.
 
 ## 5. Sport labeling
 

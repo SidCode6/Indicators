@@ -235,6 +235,19 @@ MIN_FAVORITE_PCT = 0.83
 MAX_FAVORITE_PCT = 0.98
 MAX_OUTPUT_ITEMS = 15
 
+# Market-activity liveness signal. Kalshi's occurrence_datetime is the
+# *scheduled* start and is routinely wrong by HOURS (observed: live ITF
+# matches with occ ~4.6h in the future; live IPL ~3.5h off). No buffer
+# can fix that without surfacing the whole day's schedule. But an
+# actually-in-play market is heavily traded: live ITF matches showed
+# open_interest_fp / volume_fp in the tens-to-hundreds of THOUSANDS,
+# while the 146 not-yet-live scheduled matches had 0 (noise ≤ ~600).
+# So: an event is also "live" if its market activity clears this
+# threshold (independent of the unreliable timestamp), bounded by a
+# generous sanity window so a far-future pre-traded market can't leak.
+KALSHI_LIVE_MIN_ACTIVITY = 5000   # open_interest_fp or volume_fp (huge gap: noise ≤600, live ≥17k)
+KALSHI_LIVE_SANITY_HOURS = 12     # only apply the activity path within ±12h of occ
+
 # Game-outcome series suffixes (not prop bets / awards / drafts).
 LIVE_GAME_SUFFIXES = ("GAME", "MATCH", "FIGHT", "RACE")
 
@@ -806,6 +819,29 @@ def _is_live_now(occurrence_dt, sport_label: str) -> bool:
     return start_window <= now <= end_window
 
 
+def _event_market_activity(markets: list[dict]) -> float:
+    """Max open_interest_fp / volume_fp across an event's markets — a
+    direct 'this market is being traded right now' signal that does NOT
+    depend on Kalshi's unreliable occurrence_datetime."""
+    best = 0.0
+    for m in markets or []:
+        for key in ("open_interest_fp", "volume_fp", "volume_24h_fp"):
+            best = max(best, _parse_dollars(m.get(key)))
+    return best
+
+
+def _is_live_by_activity(occurrence_dt, markets: list[dict]) -> bool:
+    """True if the market is heavily traded (=> actually in play) within a
+    generous sanity window of its scheduled time. This is the robust path
+    for the common case where occurrence_datetime is hours wrong."""
+    if _event_market_activity(markets) < KALSHI_LIVE_MIN_ACTIVITY:
+        return False
+    if occurrence_dt is None:
+        return True  # no scheduled time but heavily traded -> it's live
+    now = datetime.now(timezone.utc)
+    return abs((now - occurrence_dt).total_seconds()) <= KALSHI_LIVE_SANITY_HOURS * 3600
+
+
 def _select_event_sides(event_markets: list[dict]) -> list[dict]:
     """Return the matchup sides to display for one event.
 
@@ -884,7 +920,13 @@ def _evaluate_event(e: dict, title_cache: dict) -> dict | None:
     # populated one as the event's start time.
     sample_market = next((m for m in markets if m.get("occurrence_datetime")), None)
     occ_dt = _parse_iso((sample_market or {}).get("occurrence_datetime"))
-    if not _is_live_now(occ_dt, sport_label):
+    # Live if EITHER the scheduled-time window says so, OR the market is
+    # actively traded right now. occurrence_datetime is routinely wrong by
+    # hours (the recurring IPL / Eliteserien / ITF miss); the activity
+    # path is robust to that. Additive — never hides a previously-shown
+    # event, only surfaces genuinely-live ones the timestamp missed.
+    if not (_is_live_now(occ_dt, sport_label)
+            or _is_live_by_activity(occ_dt, markets)):
         return None
 
     sides = _select_event_sides(markets)
