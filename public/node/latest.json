@@ -1,21 +1,21 @@
 {
   "ticker": "NODE",
-  "as_of": "2026-05-15",
-  "fetched_at": "2026-05-18T18:18:02Z",
-  "source_filename": "NODE_asof_20260515.xlsx",
+  "as_of": "2026-05-18",
+  "fetched_at": "2026-05-19T18:20:23Z",
+  "source_filename": "NODE_asof_20260518.xlsx",
   "fund": {
-    "nav": 44.13,
-    "ytd_return_pct": 27.32,
-    "total_net_assets_usd": 75460000.0,
+    "nav": 42.74,
+    "ytd_return_pct": 23.32,
+    "total_net_assets_usd": 73090000.0,
     "gross_expense_ratio_pct": 0.69,
     "net_expense_ratio_pct": 0.67,
     "inception_date": "2025-05-13",
     "num_holdings": 62,
     "num_cash_positions": 7,
-    "total_net_assets_prior_usd": 79450000.0,
-    "total_net_assets_change_usd": -3990000.0,
-    "total_net_assets_change_pct": -5.022026431718062,
-    "prior_snapshot_date": "2026-05-14"
+    "total_net_assets_prior_usd": 75460000.0,
+    "total_net_assets_change_usd": -2370000.0,
+    "total_net_assets_change_pct": -3.140736814206202,
+    "prior_snapshot_date": "2026-05-15"
   },
   "watchlist": [
     {
@@ -25,11 +25,11 @@
       "status": "HELD",
       "current": {
         "name": "VanEck Bitcoin ETF",
-        "shares": 318708,
-        "weight_pct": 9.44,
-        "market_value_usd": 7126310.88
+        "shares": 324708,
+        "weight_pct": 9.43,
+        "market_value_usd": 7052657.76
       },
-      "summary": "Unchanged at 9.44% of NAV (318,708 shares)"
+      "summary": "Increased: +6,000 shares (+1.9%); weight -0.01pp \u2192 9.43%"
     },
     {
       "ticker": "MSTR",
@@ -39,10 +39,10 @@
       "current": {
         "name": "Strategy Inc",
         "shares": 5731,
-        "weight_pct": 1.35,
-        "market_value_usd": 1016794.02
+        "weight_pct": 1.28,
+        "market_value_usd": 954956.53
       },
-      "summary": "Unchanged at 1.35% of NAV (5,731 shares)"
+      "summary": "Unchanged at 1.28% of NAV (5,731 shares)"
     },
     {
       "ticker": "ASST",
@@ -59,78 +59,287 @@
       "summary": "Not currently held"
     }
   ],
-  "today_events": [],
+  "today_events": [
+    {
+      "type": "increased",
+      "ticker": "MARA",
+      "name": "Mara Holdings Inc",
+      "shares": 204894,
+      "prior_shares": 183894,
+      "delta_shares": 21000,
+      "delta_shares_pct": 11.419622173643512,
+      "delta_weight_pp": 0.31000000000000005,
+      "flow_adjusted_shares_pct": 14.560358987849714,
+      "weight_pct": 3.34,
+      "summary": "Increased MARA by +11.4% shares (flow-adj +14.6%); weight +0.31pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "BTDR",
+      "name": "Bitdeer Technologies Group",
+      "shares": 50570,
+      "prior_shares": 35570,
+      "delta_shares": 15000,
+      "delta_shares_pct": 42.17036828788305,
+      "delta_weight_pp": 0.26,
+      "flow_adjusted_shares_pct": 45.31110510208925,
+      "weight_pct": 0.89,
+      "summary": "Increased BTDR by +42.2% shares (flow-adj +45.3%); weight +0.26pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "CNTN",
+      "name": "Canton Strategic Holdings Inc",
+      "shares": 47064,
+      "prior_shares": 32064,
+      "delta_shares": 15000,
+      "delta_shares_pct": 46.7814371257485,
+      "delta_weight_pp": 0.06,
+      "flow_adjusted_shares_pct": 49.9221739399547,
+      "weight_pct": 0.21,
+      "summary": "Increased CNTN by +46.8% shares (flow-adj +49.9%); weight +0.06pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "CLSK",
+      "name": "Cleanspark Inc",
+      "shares": 109210,
+      "prior_shares": 98210,
+      "delta_shares": 11000,
+      "delta_shares_pct": 11.20048874859994,
+      "delta_weight_pp": 0.25,
+      "flow_adjusted_shares_pct": 14.341225562806141,
+      "weight_pct": 1.96,
+      "summary": "Increased CLSK by +11.2% shares (flow-adj +14.3%); weight +0.25pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "KEEL",
+      "name": "Keel Infrastructure Corp",
+      "shares": 208359,
+      "prior_shares": 199359,
+      "delta_shares": 9000,
+      "delta_shares_pct": 4.5144688727371225,
+      "delta_weight_pp": 0.0,
+      "flow_adjusted_shares_pct": 7.655205686943324,
+      "weight_pct": 1.16,
+      "summary": "Increased KEEL by +4.5% shares (flow-adj +7.7%); weight +0.00pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "ARLP",
+      "name": "Alliance Resource Partners Lp",
+      "shares": 17196,
+      "prior_shares": 8596,
+      "delta_shares": 8600,
+      "delta_shares_pct": 100.04653327128896,
+      "delta_weight_pp": 0.29,
+      "flow_adjusted_shares_pct": 103.18727008549517,
+      "weight_pct": 0.58,
+      "summary": "Increased ARLP by +100.0% shares (flow-adj +103.2%); weight +0.29pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "PURR",
+      "name": "Hyperliquid Strategies Inc",
+      "shares": 36519,
+      "prior_shares": 29519,
+      "delta_shares": 7000,
+      "delta_shares_pct": 23.713540431586434,
+      "delta_weight_pp": 0.07,
+      "flow_adjusted_shares_pct": 26.854277245792638,
+      "weight_pct": 0.34,
+      "summary": "Increased PURR by +23.7% shares (flow-adj +26.9%); weight +0.07pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "HODL",
+      "name": "VanEck Bitcoin ETF",
+      "shares": 324708,
+      "prior_shares": 318708,
+      "delta_shares": 6000,
+      "delta_shares_pct": 1.8826010015437329,
+      "delta_weight_pp": -0.009999999999999787,
+      "flow_adjusted_shares_pct": 5.023337815749935,
+      "weight_pct": 9.43,
+      "summary": "Increased HODL by +1.9% shares (flow-adj +5.0%); weight -0.01pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "NU",
+      "name": "Nu Holdings Ltd/Cayman Islands",
+      "shares": 51000,
+      "prior_shares": 47000,
+      "delta_shares": 4000,
+      "delta_shares_pct": 8.51063829787234,
+      "delta_weight_pp": 0.07999999999999996,
+      "flow_adjusted_shares_pct": 11.651375112078542,
+      "weight_pct": 0.84,
+      "summary": "Increased NU by +8.5% shares (flow-adj +11.7%); weight +0.08pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "CIFR",
+      "name": "Cipher Mining Inc",
+      "shares": 190584,
+      "prior_shares": 188584,
+      "delta_shares": 2000,
+      "delta_shares_pct": 1.0605353582488442,
+      "delta_weight_pp": -0.20999999999999996,
+      "flow_adjusted_shares_pct": 4.201272172455046,
+      "weight_pct": 4.87,
+      "summary": "Increased CIFR by +1.1% shares (flow-adj +4.2%); weight -0.21pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "OPRA",
+      "name": "Opera Ltd",
+      "shares": 36778,
+      "prior_shares": 34778,
+      "delta_shares": 2000,
+      "delta_shares_pct": 5.750761975961815,
+      "delta_weight_pp": 0.040000000000000036,
+      "flow_adjusted_shares_pct": 8.891498790168017,
+      "weight_pct": 0.86,
+      "summary": "Increased OPRA by +5.8% shares (flow-adj +8.9%); weight +0.04pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "ZCSH",
+      "name": "Grayscale Zcash Trust",
+      "shares": 7395,
+      "prior_shares": 5895,
+      "delta_shares": 1500,
+      "delta_shares_pct": 25.44529262086514,
+      "delta_weight_pp": 0.09999999999999998,
+      "flow_adjusted_shares_pct": 28.586029435071342,
+      "weight_pct": 0.37,
+      "summary": "Increased ZCSH by +25.4% shares (flow-adj +28.6%); weight +0.10pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "BR",
+      "name": "Broadridge Financial Solutions Inc",
+      "shares": 2400,
+      "prior_shares": 1000,
+      "delta_shares": 1400,
+      "delta_shares_pct": 140.0,
+      "delta_weight_pp": 0.29,
+      "flow_adjusted_shares_pct": 143.1407368142062,
+      "weight_pct": 0.48,
+      "summary": "Increased BR by +140.0% shares (flow-adj +143.1%); weight +0.29pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "BLSH",
+      "name": "Bullish",
+      "shares": 24322,
+      "prior_shares": 23322,
+      "delta_shares": 1000,
+      "delta_shares_pct": 4.2877969299373975,
+      "delta_weight_pp": 0.05999999999999983,
+      "flow_adjusted_shares_pct": 7.4285337441436,
+      "weight_pct": 1.16,
+      "summary": "Increased BLSH by +4.3% shares (flow-adj +7.4%); weight +0.06pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "FIGR",
+      "name": "Figure Technology Solutions Inc",
+      "shares": 85566,
+      "prior_shares": 84666,
+      "delta_shares": 900,
+      "delta_shares_pct": 1.0630004960668982,
+      "delta_weight_pp": -0.4500000000000002,
+      "flow_adjusted_shares_pct": 4.2037373102731,
+      "weight_pct": 4.41,
+      "summary": "Increased FIGR by +1.1% shares (flow-adj +4.2%); weight -0.45pp"
+    },
+    {
+      "type": "increased",
+      "ticker": "FUTU",
+      "name": "Futu Holdings Ltd",
+      "shares": 4325,
+      "prior_shares": 3975,
+      "delta_shares": 350,
+      "delta_shares_pct": 8.80503144654088,
+      "delta_weight_pp": 0.050000000000000044,
+      "flow_adjusted_shares_pct": 11.945768260747082,
+      "weight_pct": 0.76,
+      "summary": "Increased FUTU by +8.8% shares (flow-adj +11.9%); weight +0.05pp"
+    }
+  ],
   "multi_day_patterns": {
     "accumulating": [],
     "distributing": [],
     "window_days": 7,
     "min_days": 3,
-    "snapshots_in_window": 4,
+    "snapshots_in_window": 5,
     "ready": true
   },
   "top_movers": {
     "weight_gainers": [
       {
-        "ticker": "FIGR",
-        "name": "Figure Technology Solutions Inc",
+        "ticker": "MARA",
+        "name": "Mara Holdings Inc",
+        "delta_weight_pp": 0.31000000000000005,
+        "weight_pct": 3.34
+      },
+      {
+        "ticker": "ARLP",
+        "name": "Alliance Resource Partners Lp",
+        "delta_weight_pp": 0.29,
+        "weight_pct": 0.58
+      },
+      {
+        "ticker": "BR",
+        "name": "Broadridge Financial Solutions Inc",
+        "delta_weight_pp": 0.29,
+        "weight_pct": 0.48
+      },
+      {
+        "ticker": "BTDR",
+        "name": "Bitdeer Technologies Group",
+        "delta_weight_pp": 0.26,
+        "weight_pct": 0.89
+      },
+      {
+        "ticker": "CLSK",
+        "name": "Cleanspark Inc",
         "delta_weight_pp": 0.25,
-        "weight_pct": 4.86
-      },
-      {
-        "ticker": "HODL",
-        "name": "VanEck Bitcoin ETF",
-        "delta_weight_pp": 0.1999999999999993,
-        "weight_pct": 9.44
-      },
-      {
-        "ticker": "AKER NO",
-        "name": "Aker Asa",
-        "delta_weight_pp": 0.13000000000000012,
-        "weight_pct": 1.56
-      },
-      {
-        "ticker": "SEI",
-        "name": "Solaris Energy Infrastructure Inc",
-        "delta_weight_pp": 0.10999999999999988,
-        "weight_pct": 1.92
-      },
-      {
-        "ticker": "CORZ",
-        "name": "Core Scientific Inc",
-        "delta_weight_pp": 0.08000000000000007,
-        "weight_pct": 3.71
+        "weight_pct": 1.96
       }
     ],
     "weight_losers": [
       {
-        "ticker": "IREN",
-        "name": "Iren Ltd",
-        "delta_weight_pp": -0.21999999999999975,
-        "weight_pct": 4.58
+        "ticker": "FIGR",
+        "name": "Figure Technology Solutions Inc",
+        "delta_weight_pp": -0.4500000000000002,
+        "weight_pct": 4.41
+      },
+      {
+        "ticker": "APLD",
+        "name": "Applied Digital Corp",
+        "delta_weight_pp": -0.2999999999999998,
+        "weight_pct": 3.88
+      },
+      {
+        "ticker": "HUT",
+        "name": "Hut 8 Corp",
+        "delta_weight_pp": -0.28000000000000025,
+        "weight_pct": 5.0
+      },
+      {
+        "ticker": "WULF",
+        "name": "Terawulf Inc",
+        "delta_weight_pp": -0.2599999999999998,
+        "weight_pct": 5.57
       },
       {
         "ticker": "CIFR",
         "name": "Cipher Mining Inc",
         "delta_weight_pp": -0.20999999999999996,
-        "weight_pct": 5.08
-      },
-      {
-        "ticker": "000660 KS",
-        "name": "Sk Hynix Inc",
-        "delta_weight_pp": -0.19999999999999973,
-        "weight_pct": 3.16
-      },
-      {
-        "ticker": "APLD",
-        "name": "Applied Digital Corp",
-        "delta_weight_pp": -0.1800000000000006,
-        "weight_pct": 4.18
-      },
-      {
-        "ticker": "WULF",
-        "name": "Terawulf Inc",
-        "delta_weight_pp": -0.16999999999999993,
-        "weight_pct": 5.83
+        "weight_pct": 4.87
       }
     ]
   },
@@ -138,9 +347,9 @@
     "HODL": {
       "deltas": {
         "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.1999999999999993,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_shares_pct": 1.8826010015437329,
+          "delta_weight_pp": -0.009999999999999787,
+          "flow_adjusted_shares_pct": 5.023337815749935
         }
       }
     },
@@ -148,8 +357,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.16999999999999993,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.2599999999999998,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -157,26 +366,26 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.0699999999999994,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.28000000000000025,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
     "CIFR": {
       "deltas": {
         "1d": {
-          "delta_shares_pct": 0.0,
+          "delta_shares_pct": 1.0605353582488442,
           "delta_weight_pp": -0.20999999999999996,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "flow_adjusted_shares_pct": 4.201272172455046
         }
       }
     },
     "FIGR": {
       "deltas": {
         "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.25,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_shares_pct": 1.0630004960668982,
+          "delta_weight_pp": -0.4500000000000002,
+          "flow_adjusted_shares_pct": 4.2037373102731
         }
       }
     },
@@ -184,8 +393,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.21999999999999975,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.16999999999999993,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -193,8 +402,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.1800000000000006,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.2999999999999998,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -202,8 +411,17 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.08000000000000007,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.06999999999999984,
+          "flow_adjusted_shares_pct": 3.140736814206202
+        }
+      }
+    },
+    "MARA": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 11.419622173643512,
+          "delta_weight_pp": 0.31000000000000005,
+          "flow_adjusted_shares_pct": 14.560358987849714
         }
       }
     },
@@ -211,17 +429,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.19999999999999973,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "MARA": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.050000000000000266,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.06000000000000005,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -229,8 +438,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.009999999999999787,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.009999999999999787,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -238,8 +447,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.08000000000000007,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.03000000000000025,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -247,8 +456,17 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.06999999999999984,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.11000000000000032,
+          "flow_adjusted_shares_pct": 3.140736814206202
+        }
+      }
+    },
+    "CLSK": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 11.20048874859994,
+          "delta_weight_pp": 0.25,
+          "flow_adjusted_shares_pct": 14.341225562806141
         }
       }
     },
@@ -256,35 +474,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.10999999999999988,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "VRT": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.06000000000000005,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "CLSK": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.020000000000000018,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "XYZ": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.050000000000000044,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.1399999999999999,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -292,8 +483,26 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.13000000000000012,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.07999999999999985,
+          "flow_adjusted_shares_pct": 3.140736814206202
+        }
+      }
+    },
+    "XYZ": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 0.0,
+          "delta_weight_pp": 0.020000000000000018,
+          "flow_adjusted_shares_pct": 3.140736814206202
+        }
+      }
+    },
+    "VRT": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 0.0,
+          "delta_weight_pp": -0.1299999999999999,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -301,8 +510,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.040000000000000036,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.029999999999999805,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -310,8 +519,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.0,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.07000000000000006,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -319,8 +528,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.06000000000000005,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.010000000000000009,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -328,17 +537,17 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.0,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.010000000000000009,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
-    "TLN": {
+    "DTM": {
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.010000000000000009,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.020000000000000018,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -347,25 +556,16 @@
         "1d": {
           "delta_shares_pct": 0.0,
           "delta_weight_pp": -0.010000000000000009,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
-    "VST": {
+    "TLN": {
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.040000000000000036,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "DTM": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.06000000000000005,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.020000000000000018,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -373,35 +573,35 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.040000000000000036,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.010000000000000009,
+          "flow_adjusted_shares_pct": 3.140736814206202
+        }
+      }
+    },
+    "VST": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 0.0,
+          "delta_weight_pp": -0.010000000000000009,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
     "KEEL": {
       "deltas": {
         "1d": {
-          "delta_shares_pct": 0.0,
+          "delta_shares_pct": 4.5144688727371225,
           "delta_weight_pp": 0.0,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "flow_adjusted_shares_pct": 7.655205686943324
         }
       }
     },
     "BLSH": {
       "deltas": {
         "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.05999999999999983,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "ETHV": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.010000000000000009,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_shares_pct": 4.2877969299373975,
+          "delta_weight_pp": 0.05999999999999983,
+          "flow_adjusted_shares_pct": 7.4285337441436
         }
       }
     },
@@ -409,8 +609,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.040000000000000036,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.0,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -418,8 +618,17 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.06000000000000005,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.0,
+          "flow_adjusted_shares_pct": 3.140736814206202
+        }
+      }
+    },
+    "ETHV": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 0.0,
+          "delta_weight_pp": -0.030000000000000027,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -428,7 +637,7 @@
         "1d": {
           "delta_shares_pct": 0.0,
           "delta_weight_pp": 0.030000000000000027,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -436,8 +645,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.010000000000000009,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.0,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -445,8 +654,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.019999999999999907,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.0,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -454,8 +663,17 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.06000000000000005,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.009999999999999898,
+          "flow_adjusted_shares_pct": 3.140736814206202
+        }
+      }
+    },
+    "BTDR": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 42.17036828788305,
+          "delta_weight_pp": 0.26,
+          "flow_adjusted_shares_pct": 45.31110510208925
         }
       }
     },
@@ -463,8 +681,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.040000000000000036,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.010000000000000009,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -472,17 +690,17 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.05999999999999994,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.030000000000000027,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
-    "WYFI": {
+    "OPRA": {
       "deltas": {
         "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.15000000000000002,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_shares_pct": 5.750761975961815,
+          "delta_weight_pp": 0.040000000000000036,
+          "flow_adjusted_shares_pct": 8.891498790168017
         }
       }
     },
@@ -490,17 +708,26 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.039999999999999925,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.0,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
-    "OPRA": {
+    "WYFI": {
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.029999999999999916,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.010000000000000009,
+          "flow_adjusted_shares_pct": 3.140736814206202
+        }
+      }
+    },
+    "NU": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 8.51063829787234,
+          "delta_weight_pp": 0.07999999999999996,
+          "flow_adjusted_shares_pct": 11.651375112078542
         }
       }
     },
@@ -509,7 +736,7 @@
         "1d": {
           "delta_shares_pct": 0.0,
           "delta_weight_pp": 0.010000000000000009,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -517,8 +744,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.0,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.010000000000000009,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -526,8 +753,17 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.020000000000000018,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.010000000000000009,
+          "flow_adjusted_shares_pct": 3.140736814206202
+        }
+      }
+    },
+    "FUTU": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 8.80503144654088,
+          "delta_weight_pp": 0.050000000000000044,
+          "flow_adjusted_shares_pct": 11.945768260747082
         }
       }
     },
@@ -536,25 +772,7 @@
         "1d": {
           "delta_shares_pct": 0.0,
           "delta_weight_pp": 0.0,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "NU": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.010000000000000009,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "FUTU": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.0,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -562,35 +780,8 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.009999999999999898,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "BTDR": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.030000000000000027,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "VSOL": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
           "delta_weight_pp": 0.0,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "BE": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.020000000000000018,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -598,8 +789,44 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
+          "delta_weight_pp": 0.14,
+          "flow_adjusted_shares_pct": 3.140736814206202
+        }
+      }
+    },
+    "ARLP": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 100.04653327128896,
+          "delta_weight_pp": 0.29,
+          "flow_adjusted_shares_pct": 103.18727008549517
+        }
+      }
+    },
+    "VSOL": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 0.0,
           "delta_weight_pp": -0.020000000000000018,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "flow_adjusted_shares_pct": 3.140736814206202
+        }
+      }
+    },
+    "BE": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 0.0,
+          "delta_weight_pp": -0.030000000000000027,
+          "flow_adjusted_shares_pct": 3.140736814206202
+        }
+      }
+    },
+    "BR": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 140.0,
+          "delta_weight_pp": 0.29,
+          "flow_adjusted_shares_pct": 143.1407368142062
         }
       }
     },
@@ -607,8 +834,17 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.009999999999999953,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": 0.009999999999999953,
+          "flow_adjusted_shares_pct": 3.140736814206202
+        }
+      }
+    },
+    "ZCSH": {
+      "deltas": {
+        "1d": {
+          "delta_shares_pct": 25.44529262086514,
+          "delta_weight_pp": 0.09999999999999998,
+          "flow_adjusted_shares_pct": 28.586029435071342
         }
       }
     },
@@ -616,44 +852,35 @@
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.0,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "ARLP": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.019999999999999962,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_weight_pp": -0.020000000000000018,
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
     "PURR": {
       "deltas": {
         "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.0,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_shares_pct": 23.713540431586434,
+          "delta_weight_pp": 0.07,
+          "flow_adjusted_shares_pct": 26.854277245792638
         }
       }
     },
-    "ZCSH": {
+    "CNTN": {
       "deltas": {
         "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": -0.019999999999999962,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "delta_shares_pct": 46.7814371257485,
+          "delta_weight_pp": 0.06,
+          "flow_adjusted_shares_pct": 49.9221739399547
         }
       }
     },
-    "BR": {
+    "CBRS": {
       "deltas": {
         "1d": {
           "delta_shares_pct": 0.0,
           "delta_weight_pp": 0.010000000000000009,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -662,25 +889,7 @@
         "1d": {
           "delta_shares_pct": 0.0,
           "delta_weight_pp": -0.010000000000000009,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "CBRS": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.07,
-          "flow_adjusted_shares_pct": 5.0220264317180625
-        }
-      }
-    },
-    "CNTN": {
-      "deltas": {
-        "1d": {
-          "delta_shares_pct": 0.0,
-          "delta_weight_pp": 0.0,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     },
@@ -689,7 +898,7 @@
         "1d": {
           "delta_shares_pct": 0.0,
           "delta_weight_pp": 0,
-          "flow_adjusted_shares_pct": 5.0220264317180625
+          "flow_adjusted_shares_pct": 3.140736814206202
         }
       }
     }
@@ -699,9 +908,9 @@
       "ticker": "HODL",
       "name": "VanEck Bitcoin ETF",
       "figi": "BBG01KY678Y1",
-      "shares": 318708,
-      "market_value_usd": 7126310.88,
-      "weight_pct": 9.44,
+      "shares": 324708,
+      "market_value_usd": 7052657.76,
+      "weight_pct": 9.43,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": true
@@ -711,8 +920,8 @@
       "name": "Terawulf Inc",
       "figi": "BBG0122MC900",
       "shares": 197122,
-      "market_value_usd": 4399763.04,
-      "weight_pct": 5.83,
+      "market_value_usd": 4167159.08,
+      "weight_pct": 5.57,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -722,8 +931,8 @@
       "name": "Hut 8 Corp",
       "figi": "BBG00K8H39V2",
       "shares": 38884,
-      "market_value_usd": 3984443.48,
-      "weight_pct": 5.28,
+      "market_value_usd": 3740640.8,
+      "weight_pct": 5.0,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -732,9 +941,9 @@
       "ticker": "CIFR",
       "name": "Cipher Mining Inc",
       "figi": "BBG00XYHY0K2",
-      "shares": 188584,
-      "market_value_usd": 3833912.72,
-      "weight_pct": 5.08,
+      "shares": 190584,
+      "market_value_usd": 3643966.08,
+      "weight_pct": 4.87,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -743,9 +952,9 @@
       "ticker": "FIGR",
       "name": "Figure Technology Solutions Inc",
       "figi": "BBG01NGH78G1",
-      "shares": 84666,
-      "market_value_usd": 3664344.48,
-      "weight_pct": 4.86,
+      "shares": 85566,
+      "market_value_usd": 3301136.28,
+      "weight_pct": 4.41,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -755,8 +964,8 @@
       "name": "Iren Ltd",
       "figi": "BBG010J28KQ2",
       "shares": 65322,
-      "market_value_usd": 3458146.68,
-      "weight_pct": 4.58,
+      "market_value_usd": 3296148.12,
+      "weight_pct": 4.41,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -766,8 +975,8 @@
       "name": "Applied Digital Corp",
       "figi": "BBG000DSJYS8",
       "shares": 74121,
-      "market_value_usd": 3154589.76,
-      "weight_pct": 4.18,
+      "market_value_usd": 2901095.94,
+      "weight_pct": 3.88,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -777,8 +986,19 @@
       "name": "Core Scientific Inc",
       "figi": "BBG01L5GH011",
       "shares": 115633,
-      "market_value_usd": 2799474.93,
-      "weight_pct": 3.71,
+      "market_value_usd": 2725469.81,
+      "weight_pct": 3.64,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "MARA",
+      "name": "Mara Holdings Inc",
+      "figi": "BBG001K7WBT8",
+      "shares": 204894,
+      "market_value_usd": 2495608.92,
+      "weight_pct": 3.34,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -788,19 +1008,8 @@
       "name": "Sk Hynix Inc",
       "figi": "BBG000GQVT51",
       "shares": 1991,
-      "market_value_usd": 2381635.62,
-      "weight_pct": 3.16,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "MARA",
-      "name": "Mara Holdings Inc",
-      "figi": "BBG001K7WBT8",
-      "shares": 183894,
-      "market_value_usd": 2287641.36,
-      "weight_pct": 3.03,
+      "market_value_usd": 2411603.41,
+      "weight_pct": 3.22,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -810,8 +1019,8 @@
       "name": "Riot Platforms Inc",
       "figi": "BBG000BQ4512",
       "shares": 84582,
-      "market_value_usd": 1986831.18,
-      "weight_pct": 2.63,
+      "market_value_usd": 1960610.76,
+      "weight_pct": 2.62,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -821,8 +1030,8 @@
       "name": "Circle Internet Group Inc",
       "figi": "BBG01T61V2V3",
       "shares": 15430,
-      "market_value_usd": 1759020.0,
-      "weight_pct": 2.33,
+      "market_value_usd": 1718747.7,
+      "weight_pct": 2.3,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -832,8 +1041,19 @@
       "name": "Galaxy Digital Inc",
       "figi": "BBG0120SWLS0",
       "shares": 57168,
-      "market_value_usd": 1692744.48,
-      "weight_pct": 2.24,
+      "market_value_usd": 1593272.16,
+      "weight_pct": 2.13,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "CLSK",
+      "name": "Cleanspark Inc",
+      "figi": "BBG001MB89V6",
+      "shares": 109210,
+      "market_value_usd": 1467782.4,
+      "weight_pct": 1.96,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -843,41 +1063,8 @@
       "name": "Solaris Energy Infrastructure Inc",
       "figi": "BBG00G7D6C05",
       "shares": 18414,
-      "market_value_usd": 1446972.12,
-      "weight_pct": 1.92,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "VRT",
-      "name": "Vertiv Holdings Co",
-      "figi": "BBG00L2B8KW8",
-      "shares": 3476,
-      "market_value_usd": 1289387.44,
-      "weight_pct": 1.71,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "CLSK",
-      "name": "Cleanspark Inc",
-      "figi": "BBG001MB89V6",
-      "shares": 98210,
-      "market_value_usd": 1287533.1,
-      "weight_pct": 1.71,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "XYZ",
-      "name": "Block Inc",
-      "figi": "BBG0018SLC07",
-      "shares": 17179,
-      "market_value_usd": 1208714.44,
-      "weight_pct": 1.6,
+      "market_value_usd": 1328201.82,
+      "weight_pct": 1.78,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -887,8 +1074,30 @@
       "name": "Aker Asa",
       "figi": "BBG000C2P156",
       "shares": 8952,
-      "market_value_usd": 1173547.09,
-      "weight_pct": 1.56,
+      "market_value_usd": 1228895.32,
+      "weight_pct": 1.64,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "XYZ",
+      "name": "Block Inc",
+      "figi": "BBG0018SLC07",
+      "shares": 17179,
+      "market_value_usd": 1213352.77,
+      "weight_pct": 1.62,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "VRT",
+      "name": "Vertiv Holdings Co",
+      "figi": "BBG00L2B8KW8",
+      "shares": 3476,
+      "market_value_usd": 1180901.48,
+      "weight_pct": 1.58,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -898,8 +1107,8 @@
       "name": "Coinbase Global Inc",
       "figi": "BBG00ZGF7771",
       "shares": 5354,
-      "market_value_usd": 1046332.22,
-      "weight_pct": 1.39,
+      "market_value_usd": 1014261.76,
+      "weight_pct": 1.36,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -909,8 +1118,8 @@
       "name": "Strategy Inc",
       "figi": "BBG000GQJPZ0",
       "shares": 5731,
-      "market_value_usd": 1016794.02,
-      "weight_pct": 1.35,
+      "market_value_usd": 954956.53,
+      "weight_pct": 1.28,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -920,8 +1129,8 @@
       "name": "Williams Cos Inc/The",
       "figi": "BBG000BWVCP8",
       "shares": 12228,
-      "market_value_usd": 950360.16,
-      "weight_pct": 1.26,
+      "market_value_usd": 949993.32,
+      "weight_pct": 1.27,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -931,41 +1140,8 @@
       "name": "Legence Corp",
       "figi": "BBG01WRYRPZ1",
       "shares": 11084,
-      "market_value_usd": 934381.2,
-      "weight_pct": 1.24,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "TLN",
-      "name": "Talen Energy Corp",
-      "figi": "BBG01GWQVVD3",
-      "shares": 2783,
-      "market_value_usd": 930189.92,
+      "market_value_usd": 923408.04,
       "weight_pct": 1.23,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "NRG",
-      "name": "Nrg Energy Inc",
-      "figi": "BBG000D8RG11",
-      "shares": 7225,
-      "market_value_usd": 923427.25,
-      "weight_pct": 1.22,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "VST",
-      "name": "Vistra Corp",
-      "figi": "BBG00DXDL6Q1",
-      "shares": 6553,
-      "market_value_usd": 915323.04,
-      "weight_pct": 1.21,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -975,8 +1151,30 @@
       "name": "Dt Midstream Inc",
       "figi": "BBG0112Z58J3",
       "shares": 6130,
-      "market_value_usd": 907730.4,
-      "weight_pct": 1.2,
+      "market_value_usd": 912389.2,
+      "weight_pct": 1.22,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "NRG",
+      "name": "Nrg Energy Inc",
+      "figi": "BBG000D8RG11",
+      "shares": 7225,
+      "market_value_usd": 906737.5,
+      "weight_pct": 1.21,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "TLN",
+      "name": "Talen Energy Corp",
+      "figi": "BBG01GWQVVD3",
+      "shares": 2783,
+      "market_value_usd": 902276.43,
+      "weight_pct": 1.21,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -986,7 +1184,18 @@
       "name": "Global Unichip Corp",
       "figi": "BBG000FM8B65",
       "shares": 6000,
-      "market_value_usd": 905349.59,
+      "market_value_usd": 902045.67,
+      "weight_pct": 1.21,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "VST",
+      "name": "Vistra Corp",
+      "figi": "BBG00DXDL6Q1",
+      "shares": 6553,
+      "market_value_usd": 896122.75,
       "weight_pct": 1.2,
       "asset_class": "Stock",
       "is_cash": false,
@@ -996,8 +1205,8 @@
       "ticker": "KEEL",
       "name": "Keel Infrastructure Corp",
       "figi": "BBG021DN5TF5",
-      "shares": 199359,
-      "market_value_usd": 875186.01,
+      "shares": 208359,
+      "market_value_usd": 870940.62,
       "weight_pct": 1.16,
       "asset_class": "Stock",
       "is_cash": false,
@@ -1007,30 +1216,19 @@
       "ticker": "BLSH",
       "name": "Bullish",
       "figi": "BBG01W8QW0N1",
-      "shares": 23322,
-      "market_value_usd": 831662.52,
-      "weight_pct": 1.1,
+      "shares": 24322,
+      "market_value_usd": 864890.32,
+      "weight_pct": 1.16,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
-    },
-    {
-      "ticker": "ETHV",
-      "name": "VanEck Ethereum ETF",
-      "figi": "BBG01NX8ZGV6",
-      "shares": 24735,
-      "market_value_usd": 803392.8,
-      "weight_pct": 1.06,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": true
     },
     {
       "ticker": "IBKR",
       "name": "Interactive Brokers Group Inc",
       "figi": "BBG000LV0836",
       "shares": 9205,
-      "market_value_usd": 800835.0,
+      "market_value_usd": 792734.6,
       "weight_pct": 1.06,
       "asset_class": "Stock",
       "is_cash": false,
@@ -1048,12 +1246,23 @@
       "is_vaneck_fund": false
     },
     {
+      "ticker": "ETHV",
+      "name": "VanEck Ethereum ETF",
+      "figi": "BBG01NX8ZGV6",
+      "shares": 24735,
+      "market_value_usd": 767032.35,
+      "weight_pct": 1.03,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": true
+    },
+    {
       "ticker": "AEP",
       "name": "American Electric Power Co Inc",
       "figi": "BBG000BB9KF2",
       "shares": 5894,
-      "market_value_usd": 737634.1,
-      "weight_pct": 0.98,
+      "market_value_usd": 752545.92,
+      "weight_pct": 1.01,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -1063,7 +1272,7 @@
       "name": "VanEck Quantum Computing Ucits ETF",
       "figi": "BBG01V30CCS6",
       "shares": 24812,
-      "market_value_usd": 722999.52,
+      "market_value_usd": 720126.07,
       "weight_pct": 0.96,
       "asset_class": "Stock",
       "is_cash": false,
@@ -1074,7 +1283,7 @@
       "name": "Composecure Inc",
       "figi": "BBG00XTTT297",
       "shares": 58660,
-      "market_value_usd": 709639.35,
+      "market_value_usd": 706266.4,
       "weight_pct": 0.94,
       "asset_class": "Stock",
       "is_cash": false,
@@ -1085,8 +1294,19 @@
       "name": "Reddit Inc",
       "figi": "BBG005K1D4S0",
       "shares": 4415,
-      "market_value_usd": 698320.55,
-      "weight_pct": 0.93,
+      "market_value_usd": 702470.65,
+      "weight_pct": 0.94,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "BTDR",
+      "name": "Bitdeer Technologies Group",
+      "figi": "BBG0142Q8P97",
+      "shares": 50570,
+      "market_value_usd": 664995.5,
+      "weight_pct": 0.89,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -1096,8 +1316,8 @@
       "name": "Sea Ltd",
       "figi": "BBG00HTBWMG5",
       "shares": 7450,
-      "market_value_usd": 657313.5,
-      "weight_pct": 0.87,
+      "market_value_usd": 657760.5,
+      "weight_pct": 0.88,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -1107,7 +1327,29 @@
       "name": "Shopify Inc",
       "figi": "BBG008HBD923",
       "shares": 6404,
-      "market_value_usd": 642193.12,
+      "market_value_usd": 655705.56,
+      "weight_pct": 0.88,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "OPRA",
+      "name": "Opera Ltd",
+      "figi": "BBG00LBLDHJ2",
+      "shares": 36778,
+      "market_value_usd": 641408.32,
+      "weight_pct": 0.86,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "GOOGL",
+      "name": "Alphabet Inc",
+      "figi": "BBG009S39JX6",
+      "shares": 1608,
+      "market_value_usd": 638279.52,
       "weight_pct": 0.85,
       "asset_class": "Stock",
       "is_cash": false,
@@ -1118,30 +1360,19 @@
       "name": "Whitefiber Inc",
       "figi": "BBG01W3459T0",
       "shares": 26464,
-      "market_value_usd": 640428.8,
-      "weight_pct": 0.85,
+      "market_value_usd": 629049.28,
+      "weight_pct": 0.84,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
     },
     {
-      "ticker": "GOOGL",
-      "name": "Alphabet Inc",
-      "figi": "BBG009S39JX6",
-      "shares": 1608,
-      "market_value_usd": 638022.24,
-      "weight_pct": 0.85,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "OPRA",
-      "name": "Opera Ltd",
-      "figi": "BBG00LBLDHJ2",
-      "shares": 34778,
-      "market_value_usd": 622178.42,
-      "weight_pct": 0.82,
+      "ticker": "NU",
+      "name": "Nu Holdings Ltd/Cayman Islands",
+      "figi": "BBG0136WM1M4",
+      "shares": 51000,
+      "market_value_usd": 626790.0,
+      "weight_pct": 0.84,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -1151,8 +1382,8 @@
       "name": "Raspberry Pi Holdings Plc",
       "figi": "BBG01N605KK9",
       "shares": 64588,
-      "market_value_usd": 605957.49,
-      "weight_pct": 0.8,
+      "market_value_usd": 602991.47,
+      "weight_pct": 0.81,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -1162,8 +1393,8 @@
       "name": "Robinhood Markets Inc",
       "figi": "BBG008NMBXN8",
       "shares": 7757,
-      "market_value_usd": 598374.98,
-      "weight_pct": 0.79,
+      "market_value_usd": 598452.55,
+      "weight_pct": 0.8,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -1173,8 +1404,19 @@
       "name": "Constellation Energy Corp",
       "figi": "BBG014KFRNP7",
       "shares": 2219,
-      "market_value_usd": 592916.8,
-      "weight_pct": 0.79,
+      "market_value_usd": 581378.0,
+      "weight_pct": 0.78,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "FUTU",
+      "name": "Futu Holdings Ltd",
+      "figi": "BBG00MYXW4R8",
+      "shares": 4325,
+      "market_value_usd": 569602.5,
+      "weight_pct": 0.76,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -1184,30 +1426,8 @@
       "name": "Nvidia Corp",
       "figi": "BBG000BBJQV0",
       "shares": 2545,
-      "market_value_usd": 573439.4,
+      "market_value_usd": 565804.4,
       "weight_pct": 0.76,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "NU",
-      "name": "Nu Holdings Ltd/Cayman Islands",
-      "figi": "BBG0136WM1M4",
-      "shares": 47000,
-      "market_value_usd": 572930.0,
-      "weight_pct": 0.76,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "FUTU",
-      "name": "Futu Holdings Ltd",
-      "figi": "BBG00MYXW4R8",
-      "shares": 3975,
-      "market_value_usd": 535194.0,
-      "weight_pct": 0.71,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -1217,41 +1437,8 @@
       "name": "Bwx Technologies Inc",
       "figi": "BBG000D86F25",
       "shares": 2545,
-      "market_value_usd": 521012.4,
+      "market_value_usd": 513250.15,
       "weight_pct": 0.69,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "BTDR",
-      "name": "Bitdeer Technologies Group",
-      "figi": "BBG0142Q8P97",
-      "shares": 35570,
-      "market_value_usd": 474859.5,
-      "weight_pct": 0.63,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "VSOL",
-      "name": "VanEck Solana ETF",
-      "figi": "BBG01YJKBZM5",
-      "shares": 37733,
-      "market_value_usd": 447573.75,
-      "weight_pct": 0.59,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": true
-    },
-    {
-      "ticker": "BE",
-      "name": "Bloom Energy Corp",
-      "figi": "BBG000N7KBZ3",
-      "shares": 1451,
-      "market_value_usd": 400403.45,
-      "weight_pct": 0.53,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -1261,8 +1448,52 @@
       "name": "Hive Blockchain Technologies Ltd",
       "figi": "BBG000HSWHL3",
       "shares": 131051,
-      "market_value_usd": 352527.19,
-      "weight_pct": 0.47,
+      "market_value_usd": 453436.46,
+      "weight_pct": 0.61,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "ARLP",
+      "name": "Alliance Resource Partners Lp",
+      "figi": "BBG000C14X88",
+      "shares": 17196,
+      "market_value_usd": 436778.4,
+      "weight_pct": 0.58,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "VSOL",
+      "name": "VanEck Solana ETF",
+      "figi": "BBG01YJKBZM5",
+      "shares": 37733,
+      "market_value_usd": 424873.58,
+      "weight_pct": 0.57,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": true
+    },
+    {
+      "ticker": "BE",
+      "name": "Bloom Energy Corp",
+      "figi": "BBG000N7KBZ3",
+      "shares": 1451,
+      "market_value_usd": 375388.21,
+      "weight_pct": 0.5,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "BR",
+      "name": "Broadridge Financial Solutions Inc",
+      "figi": "BBG000PPFKQ7",
+      "shares": 2400,
+      "market_value_usd": 361488.0,
+      "weight_pct": 0.48,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -1272,41 +1503,8 @@
       "name": "Abaxx Technologies Inc",
       "figi": "BBG000GR78Q9",
       "shares": 7712,
-      "market_value_usd": 302640.17,
-      "weight_pct": 0.4,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "9501 JP",
-      "name": "Tokyo Electric Power Co Holdings Inc",
-      "figi": "BBG000BKJW74",
-      "shares": 75000,
-      "market_value_usd": 280950.9,
-      "weight_pct": 0.37,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "ARLP",
-      "name": "Alliance Resource Partners Lp",
-      "figi": "BBG000C14X88",
-      "shares": 8596,
-      "market_value_usd": 216017.48,
-      "weight_pct": 0.29,
-      "asset_class": "Stock",
-      "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "PURR",
-      "name": "Hyperliquid Strategies Inc",
-      "figi": "BBG01Y593H53",
-      "shares": 29519,
-      "market_value_usd": 206337.81,
-      "weight_pct": 0.27,
+      "market_value_usd": 303058.62,
+      "weight_pct": 0.41,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -1315,31 +1513,42 @@
       "ticker": "ZCSH",
       "name": "Grayscale Zcash Trust",
       "figi": "BBG0133B2R11",
-      "shares": 5895,
-      "market_value_usd": 203672.25,
-      "weight_pct": 0.27,
+      "shares": 7395,
+      "market_value_usd": 277238.55,
+      "weight_pct": 0.37,
       "asset_class": "Other",
       "is_cash": false,
       "is_vaneck_fund": false
     },
     {
-      "ticker": "BR",
-      "name": "Broadridge Financial Solutions Inc",
-      "figi": "BBG000PPFKQ7",
-      "shares": 1000,
-      "market_value_usd": 145620.0,
-      "weight_pct": 0.19,
+      "ticker": "9501 JP",
+      "name": "Tokyo Electric Power Co Holdings Inc",
+      "figi": "BBG000BKJW74",
+      "shares": 75000,
+      "market_value_usd": 265020.28,
+      "weight_pct": 0.35,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
     },
     {
-      "ticker": "BMNR",
-      "name": "Bitmine Immersion Technologies Inc",
-      "figi": "BBG000BWFL03",
-      "shares": 7277,
-      "market_value_usd": 144593.99,
-      "weight_pct": 0.19,
+      "ticker": "PURR",
+      "name": "Hyperliquid Strategies Inc",
+      "figi": "BBG01Y593H53",
+      "shares": 36519,
+      "market_value_usd": 253076.67,
+      "weight_pct": 0.34,
+      "asset_class": "Stock",
+      "is_cash": false,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "CNTN",
+      "name": "Canton Strategic Holdings Inc",
+      "figi": "BBG012QFR2V4",
+      "shares": 47064,
+      "market_value_usd": 153428.64,
+      "weight_pct": 0.21,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -1349,19 +1558,19 @@
       "name": "Cerebras Systems Inc",
       "figi": "BBG00FNFPQH4",
       "shares": 500,
-      "market_value_usd": 139860.0,
-      "weight_pct": 0.19,
+      "market_value_usd": 148325.0,
+      "weight_pct": 0.2,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
     },
     {
-      "ticker": "CNTN",
-      "name": "Canton Strategic Holdings Inc",
-      "figi": "BBG012QFR2V4",
-      "shares": 32064,
-      "market_value_usd": 116071.68,
-      "weight_pct": 0.15,
+      "ticker": "BMNR",
+      "name": "Bitmine Immersion Technologies Inc",
+      "figi": "BBG000BWFL03",
+      "shares": 7277,
+      "market_value_usd": 136298.21,
+      "weight_pct": 0.18,
       "asset_class": "Stock",
       "is_cash": false,
       "is_vaneck_fund": false
@@ -1371,21 +1580,10 @@
       "name": "Mirion Technologies Inc",
       "figi": "BBG00VHJ1K96",
       "shares": 36,
-      "market_value_usd": 654.12,
+      "market_value_usd": 649.08,
       "weight_pct": 0.0,
       "asset_class": "Stock",
       "is_cash": false,
-      "is_vaneck_fund": false
-    },
-    {
-      "ticker": "-USD CASH-",
-      "name": null,
-      "figi": null,
-      "shares": 401473,
-      "market_value_usd": 401473.06,
-      "weight_pct": 0.53,
-      "asset_class": "Cash Bal",
-      "is_cash": true,
       "is_vaneck_fund": false
     },
     {
@@ -1415,7 +1613,7 @@
       "name": null,
       "figi": null,
       "shares": 782,
-      "market_value_usd": 4.93,
+      "market_value_usd": 4.92,
       "weight_pct": 0.0,
       "asset_class": "Cash Bal",
       "is_cash": true,
@@ -1426,7 +1624,7 @@
       "name": null,
       "figi": null,
       "shares": 25,
-      "market_value_usd": 33.2,
+      "market_value_usd": 33.33,
       "weight_pct": 0.0,
       "asset_class": "Cash Bal",
       "is_cash": true,
@@ -1437,8 +1635,19 @@
       "name": null,
       "figi": null,
       "shares": 29,
-      "market_value_usd": 33.69,
+      "market_value_usd": 33.73,
       "weight_pct": 0.0,
+      "asset_class": "Cash Bal",
+      "is_cash": true,
+      "is_vaneck_fund": false
+    },
+    {
+      "ticker": "-USD CASH-",
+      "name": null,
+      "figi": null,
+      "shares": -1190250,
+      "market_value_usd": -1190250.16,
+      "weight_pct": -1.59,
       "asset_class": "Cash Bal",
       "is_cash": true,
       "is_vaneck_fund": false
@@ -1448,8 +1657,8 @@
       "name": "Other/Cash",
       "figi": "--",
       "shares": null,
-      "market_value_usd": -8592.99,
-      "weight_pct": -0.01,
+      "market_value_usd": 1699035.87,
+      "weight_pct": 2.27,
       "asset_class": "Cash",
       "is_cash": true,
       "is_vaneck_fund": false
@@ -1457,8 +1666,8 @@
   ],
   "history_summary": {
     "first_snapshot_date": "2026-05-12",
-    "latest_snapshot_date": "2026-05-15",
-    "num_snapshots": 4,
+    "latest_snapshot_date": "2026-05-18",
+    "num_snapshots": 5,
     "lookback_windows_days": [
       1,
       7,
