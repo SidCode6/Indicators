@@ -173,10 +173,31 @@ def test_mof_parse():
     check(into.get(k18) == 2.729, "2026-05-18 -> 2.729")
 
 
+def test_oecd_parse():
+    print("\n[OECD parse] header-indexed TIME_PERIOD/OBS_VALUE; sorted; skips blanks")
+    csv_text = "\n".join([
+        "STRUCTURE,REF_AREA,Reference area,FREQ,MEASURE,TIME_PERIOD,OBS_VALUE,OBS_STATUS",
+        "DATAFLOW,IND,India,M,IRLT,2026-01,6.732,A",
+        "DATAFLOW,IND,India,M,IRLT,2026-03,6.84,A",   # out of order on purpose
+        "DATAFLOW,IND,India,M,IRLT,2026-02,6.77,A",
+        "DATAFLOW,IND,India,M,IRLT,2025-12,,A",        # blank value -> skip
+    ])
+    obs = ma._parse_oecd_csv(csv_text)
+    check(len(obs) == 3, "3 valid rows parse (blank-value row skipped)")
+    check(obs == sorted(obs), "obs sorted oldest->newest")
+    check(obs[-1][1] == 6.84 and obs[-1][0].strftime("%Y-%m") == "2026-03",
+          "latest = 6.84 @ 2026-03")
+    r = ma._row_from_series("India 10-Year", "IN10Y", "Rates / Bonds", "rate",
+                            obs, datetime.now(timezone.utc), freq="monthly")
+    check(r["current"] == 6.84 and r["freq"] == "monthly", "row current=6.84, monthly")
+    check(r["changes"]["1D"] is None and r["changes"]["1W"] is None,
+          "1D/1W None (monthly)")
+
+
 if __name__ == "__main__":
     for fn in (test_asset_percent_returns, test_rate_pp_deltas, test_ytd_baseline,
                test_short_history_none, test_range_position, test_fred_monthly,
-               test_empty_history, test_series_daily, test_mof_parse):
+               test_empty_history, test_series_daily, test_mof_parse, test_oecd_parse):
         fn()
     print("\n" + "=" * 50)
     if _fail:

@@ -21,6 +21,8 @@ STRC/SATA issued mid/late-2025: no 1Y/5Y) — those windows are None.
 
 from __future__ import annotations
 
+import csv
+import io
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -40,13 +42,19 @@ HISTORY_PERIOD = "10y"
 #                                 (live, full windows). Falls back to the FRED
 #                                 monthly series after the colon if MOF can't be
 #                                 reached from the host.
+#   source = "oecd:<AREA>/<MEASURE>/<FRED_SERIES>"
+#                              -> MONTHLY OECD long-term rate via the OECD SDMX
+#                                 API (e.g. India). Same data as the FRED series
+#                                 but a different host that ISN'T IP-blocked from
+#                                 Railway (FRED's CSV endpoint is). Falls back to
+#                                 the FRED series if OECD is unreachable.
 ASSETS = [
     # Rates / Bonds (Yahoo yield tickers; values are the yield level in %)
     ("3-Month T-Bill", "^IRX", "Rates / Bonds", "rate", "yahoo"),
     ("10-Year Treasury", "^TNX", "Rates / Bonds", "rate", "yahoo"),
     ("30-Year Treasury", "^TYX", "Rates / Bonds", "rate", "yahoo"),
     ("Japan 10-Year", "JP10Y", "Rates / Bonds", "rate", "mof_jp:IRLTLT01JPM156N"),
-    ("India 10-Year", "IN10Y", "Rates / Bonds", "rate", "fred:INDIRLTLT01STM"),
+    ("India 10-Year", "IN10Y", "Rates / Bonds", "rate", "oecd:IND/IRLT/INDIRLTLT01STM"),
     # Major markets
     ("S&P 500", "^GSPC", "Major Markets", "asset", "yahoo"),
     ("Nasdaq 100", "^NDX", "Major Markets", "asset", "yahoo"),
@@ -310,6 +318,70 @@ def _one_japan(name, symbol, fred_series, group, kind, now) -> dict:
     return _one_fred(name, symbol, fred_series, group, kind, now)
 
 
+# ---------------------------- OECD SDMX (monthly) ---------------------------
+# India's 10Y isn't on Yahoo, and FRED's CSV endpoint is IP-blocked from
+# Railway. The OECD publishes the SAME long-term-rate series (FRED just
+# re-hosts OECD's data) via its SDMX API on a different host that IS
+# reachable. Monthly, ~1-2 months lagged. Key dims (9):
+# REF_AREA.FREQ.MEASURE.UNIT.ACTIVITY.ADJUSTMENT.TRANSFORMATION.TIME_HORIZ.METHODOLOGY
+# -> e.g. IND.M.IRLT...... (IRLT = long-term interest rates; rest wildcarded).
+
+OECD_SDMX_URL = (
+    "https://sdmx.oecd.org/public/rest/data/OECD.SDD.STES,DSD_STES@DF_FINMARK,/"
+    "{area}.M.{measure}......?startPeriod=2005-01&format=csvfilewithlabels"
+)
+
+
+def _parse_oecd_csv(text):
+    """Parse an OECD SDMX 'csvfilewithlabels' response into sorted
+    [(datetime, value)]. Columns are located by header name (TIME_PERIOD /
+    OBS_VALUE), so column reordering won't break it. [] on any problem."""
+    rows = list(csv.reader(io.StringIO(text)))
+    if not rows:
+        return []
+    header = rows[0]
+    try:
+        ti, vi = header.index("TIME_PERIOD"), header.index("OBS_VALUE")
+    except ValueError:
+        return []
+    out = {}
+    for r in rows[1:]:
+        if len(r) <= max(ti, vi):
+            continue
+        period, val_s = r[ti].strip(), r[vi].strip()
+        if not period or not val_s:
+            continue
+        try:  # monthly periods look like "YYYY-MM"
+            dt = datetime.strptime(period, "%Y-%m").replace(tzinfo=timezone.utc)
+            out[dt] = float(val_s)
+        except ValueError:
+            continue
+    return sorted(out.items())
+
+
+def _oecd_observations(area, measure):
+    """Monthly OECD long-term rate (e.g. India 10Y) as sorted
+    [(datetime, value)]. [] on any error (caller falls back to FRED)."""
+    try:
+        resp = requests.get(OECD_SDMX_URL.format(area=area, measure=measure),
+                            timeout=30, headers={"User-Agent": "Indicators-Dashboard/1.0"})
+        resp.raise_for_status()
+        return _parse_oecd_csv(resp.text)
+    except Exception as e:
+        print(f"[major_assets] OECD {area}/{measure} error: {e}")
+        return []
+
+
+def _one_oecd(name, symbol, area, measure, fred_series, group, kind, now) -> dict:
+    """Monthly rate via OECD SDMX (reachable host); fall back to the FRED
+    monthly series if OECD is unreachable."""
+    obs = _oecd_observations(area, measure)
+    if obs:
+        return _row_from_series(name, symbol, group, kind, obs, now, freq="monthly")
+    print(f"[major_assets] {name}: OECD unavailable, falling back to FRED monthly")
+    return _one_fred(name, symbol, fred_series, group, kind, now)
+
+
 def fetch() -> dict:
     """Return the table payload: ordered groups + per-asset rows."""
     now = datetime.now(timezone.utc)
@@ -317,6 +389,9 @@ def fetch() -> dict:
     for (name, symbol, group, kind, source) in ASSETS:
         if source.startswith("mof_jp:"):
             rows.append(_one_japan(name, symbol, source.split(":", 1)[1], group, kind, now))
+        elif source.startswith("oecd:"):
+            area, measure, fred_series = source.split(":", 1)[1].split("/")
+            rows.append(_one_oecd(name, symbol, area, measure, fred_series, group, kind, now))
         elif source.startswith("fred:"):
             rows.append(_one_fred(name, symbol, source.split(":", 1)[1], group, kind, now))
         else:
