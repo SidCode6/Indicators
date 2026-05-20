@@ -31,7 +31,13 @@ WATCHLIST = [
 ]
 
 # Thresholds for surfacing single-day events. Tunable.
-SIGNIFICANT_SHARE_PCT = 1.0           # Δshares > 1% (raw, before flow adjustment)
+# A held-position move is surfaced only when the MANAGER DECISION is
+# meaningful — i.e. the flow-adjusted share move (raw move with the AUM-
+# growth effect backed out) clears this bar, OR the weight genuinely
+# shifted. Pure inflow-driven proportional adds (flow-adj ~0, ~flat
+# weight) are suppressed as noise. (Was a raw-Δshares threshold, which
+# surfaced AUM-proportional changes that aren't real decisions.)
+SIGNIFICANT_FLOW_ADJ_PCT = 1.0        # manager-decision Δshares > 1% (AUM-growth backed out)
 SIGNIFICANT_WEIGHT_PP = 0.10          # Δweight > 0.10 percentage points
 ACCUMULATION_MIN_DAYS = 3             # need ≥3 up-days in window
 ACCUMULATION_WINDOW = 7               # …out of trailing 7 trading days
@@ -209,8 +215,12 @@ def compute_today_events(snapshots: list[dict]) -> list[dict]:
         dw = (h.get("weight_pct") or 0) - (prev.get("weight_pct") or 0)
         fa = _flow_adjusted_share_pct(h.get("shares"), prev.get("shares"), aum_growth)
 
-        # Suppress trivial moves — but only if both share% and weight% are small.
-        if (abs(dp or 0) < SIGNIFICANT_SHARE_PCT
+        # Suppress AUM-driven noise: surface only if the MANAGER DECISION
+        # is meaningful — the flow-adjusted share move (AUM-growth effect
+        # removed), or a genuine weight shift. Fall back to raw share% only
+        # when flow-adjustment can't be computed (no prior AUM).
+        decision_pct = fa if fa is not None else dp
+        if (abs(decision_pct or 0) < SIGNIFICANT_FLOW_ADJ_PCT
                 and abs(dw) < SIGNIFICANT_WEIGHT_PP):
             continue
 
@@ -229,11 +239,22 @@ def compute_today_events(snapshots: list[dict]) -> list[dict]:
         ev["summary"] = _human_summary(ev)
         events.append(ev)
 
-    # Sort: additions first, then exits, then by absolute share-delta magnitude
+    # Sort: additions first, then exits, then held moves by MANAGER-DECISION
+    # magnitude (flow-adjusted share %) — so the strongest real allocation
+    # changes lead, not the biggest raw (AUM-inflated) share counts.
+    def _decision_magnitude(e: dict) -> float:
+        fa = e.get("flow_adjusted_shares_pct")
+        if fa is not None:
+            return abs(fa)
+        dp = e.get("delta_shares_pct")
+        if dp is not None:
+            return abs(dp)
+        return abs(e.get("delta_weight_pp") or 0)
+
     type_priority = {"added": 0, "exited": 1, "increased": 2, "decreased": 2}
     events.sort(key=lambda e: (
         type_priority.get(e["type"], 9),
-        -abs(e.get("delta_shares") or e.get("weight_pct") or 0),
+        -_decision_magnitude(e),
     ))
     return events
 
