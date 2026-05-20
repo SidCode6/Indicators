@@ -1,0 +1,114 @@
+"""Synthetic unit tests for major_assets._row_from_history (no network).
+
+Run: python3 fetcher/sources/test_major_assets.py
+
+Verifies the column math the dashboard relies on:
+- assets -> PERCENT returns; rates -> PERCENTAGE-POINT deltas
+- YTD baseline = last close on/before Jan 1
+- 52-week low/high + current position in the band
+- insufficient history -> None for windows that don't reach back
+"""
+from __future__ import annotations
+
+import importlib.util
+import os
+from datetime import datetime, timedelta, timezone
+
+import pandas as pd
+
+_SPEC = importlib.util.spec_from_file_location(
+    "major_assets", os.path.join(os.path.dirname(os.path.abspath(__file__)), "major_assets.py")
+)
+ma = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(ma)
+
+_fail = []
+
+
+def check(cond, msg):
+    print(("  PASS  " if cond else "  FAIL  ") + msg)
+    if not cond:
+        _fail.append(msg)
+
+
+def _hist(values):
+    """Daily UTC history ending today, given a list of closes (oldest->newest)."""
+    idx = pd.date_range(end=pd.Timestamp.now(tz="UTC").normalize(),
+                        periods=len(values), freq="D", tz="UTC")
+    return pd.DataFrame({"Close": values}, index=idx)
+
+
+def test_asset_percent_returns():
+    print("\n[asset] step history 100->150: every window = +50% return")
+    now = datetime.now(timezone.utc)
+    h = _hist([100.0] * 1999 + [150.0])  # ~5.5y so the 5Y window has data
+    r = ma._row_from_history("Test", "TST", "Major Markets", "asset", h, now)
+    check(r["current"] == 150.0, "current = 150")
+    for w in ("1D", "1W", "1M", "YTD", "1Y", "5Y"):
+        check(r["changes"][w] == 50.0, f"{w} = +50.00% (asset return)")
+    check(r["week52_low"] == 100.0 and r["week52_high"] == 150.0, "52w low/high = 100/150")
+    check(r["range_pos_pct"] == 100.0, "current at top of 52w band -> pos 100%")
+
+
+def test_rate_pp_deltas():
+    print("\n[rate] step history 4.00->4.50: every window = +0.50 pp (NOT %)")
+    now = datetime.now(timezone.utc)
+    h = _hist([4.00] * 1999 + [4.50])  # ~5.5y so the 5Y window has data
+    r = ma._row_from_history("10Y", "^TNX", "Rates / Bonds", "rate", h, now)
+    check(r["current"] == 4.5, "current = 4.5")
+    for w in ("1D", "1W", "1M", "YTD", "1Y", "5Y"):
+        check(r["changes"][w] == 0.5, f"{w} = +0.50 pp (yield delta, not %)")
+
+
+def test_ytd_baseline():
+    print("\n[YTD] baseline = last close on/before Jan 1 (prior year-end)")
+    now = datetime.now(timezone.utc)
+    jan1 = pd.Timestamp(year=now.year, month=1, day=1, tz="UTC")
+    idx = pd.date_range(end=pd.Timestamp.now(tz="UTC").normalize(), periods=800, freq="D", tz="UTC")
+    # 100 up to & including Jan 1, then 200 afterwards; current = 200 -> YTD +100%
+    closes = [100.0 if d <= jan1 else 200.0 for d in idx]
+    r = ma._row_from_history("Test", "TST", "Major Markets", "asset",
+                             pd.DataFrame({"Close": closes}, index=idx), now)
+    check(r["changes"]["YTD"] == 100.0, "YTD = +100% (200 vs Jan-1 baseline 100)")
+
+
+def test_short_history_none():
+    print("\n[short] 5-day history -> long windows are None")
+    now = datetime.now(timezone.utc)
+    r = ma._row_from_history("New", "NEW", "Stocks / Crypto", "asset",
+                             _hist([100.0, 100.0, 100.0, 100.0, 150.0]), now)
+    check(r["changes"]["1D"] == 50.0, "1D present (+50%)")
+    for w in ("1W", "1M", "1Y", "5Y"):
+        check(r["changes"][w] is None, f"{w} = None (history too short)")
+
+
+def test_range_position():
+    print("\n[range] current mid-band -> correct position %")
+    now = datetime.now(timezone.utc)
+    # closes span 80..120, current 110 -> pos = (110-80)/(120-80) = 75%
+    vals = [80.0, 120.0] + [100.0] * 360 + [110.0]
+    r = ma._row_from_history("Test", "TST", "Major Markets", "asset", _hist(vals), now)
+    check(r["week52_low"] == 80.0 and r["week52_high"] == 120.0, "52w low/high 80/120")
+    check(r["range_pos_pct"] == 75.0, "current 110 -> 75% of band")
+
+
+def test_empty_history():
+    print("\n[edge] empty history -> all None, no crash")
+    now = datetime.now(timezone.utc)
+    r = ma._row_from_history("X", "X", "Major Markets", "asset",
+                             pd.DataFrame({"Close": []}), now)
+    check(r["current"] is None and r["changes"] == {} and r["range_pos_pct"] is None,
+          "empty -> nulls")
+
+
+if __name__ == "__main__":
+    for fn in (test_asset_percent_returns, test_rate_pp_deltas, test_ytd_baseline,
+               test_short_history_none, test_range_position, test_empty_history):
+        fn()
+    print("\n" + "=" * 50)
+    if _fail:
+        print(f"FAILED: {len(_fail)} assertion(s)")
+        for m in _fail:
+            print("  - " + m)
+        raise SystemExit(1)
+    print("ALL MAJOR_ASSETS TESTS PASSED")

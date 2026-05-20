@@ -261,6 +261,7 @@ function renderDashboard() {
   renderTickerCards();
   renderEquities();
   renderTreasuries();
+  renderMajorAssets();
   renderAssetComparison();
 }
 
@@ -1412,6 +1413,90 @@ function renderETFFlows() {
 
     grid.appendChild(totalCard);
   }
+}
+
+// ============================================================
+// MAJOR ASSET PERFORMANCE TABLE (top of BTC vs Assets tab)
+// ============================================================
+
+// Number format: thousands get commas + 0 decimals; smaller values 2 decimals.
+function _maFmtNum(v) {
+  if (v == null) return '—';
+  if (Math.abs(v) >= 1000) return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function _maFmtCurrent(a) {
+  if (a.current == null) return '—';
+  if (a.kind === 'rate') return a.current.toFixed(2) + '%';   // yield level
+  return _maFmtNum(a.current);
+}
+// asset changes are % returns; rate changes are percentage-point deltas.
+function _maFmtChange(v, kind) {
+  if (v == null) return '—';
+  var s = (v > 0 ? '+' : '') + v.toFixed(2);
+  return kind === 'rate' ? s : s + '%';
+}
+// Color: assets up=green/down=red; rates (yields) inverted (down=green/up=red).
+function _maChangeClass(v, kind) {
+  if (v == null || v === 0) return 'ma-flat';
+  var good = kind === 'rate' ? v < 0 : v > 0;
+  return good ? 'text-green' : 'text-red';
+}
+function _maRangeBar(a) {
+  if (a.week52_low == null || a.week52_high == null) return '<span class="ma-flat">—</span>';
+  var pos = a.range_pos_pct == null ? 50 : a.range_pos_pct;
+  return '<span class="ma-rlo">' + _maFmtNum(a.week52_low) + '</span>' +
+    '<span class="ma-track" title="' + pos + '% of 52-week range">' +
+      '<span class="ma-fill" style="width:' + pos + '%"></span>' +
+      '<span class="ma-marker" style="left:' + pos + '%"></span>' +
+    '</span>' +
+    '<span class="ma-rhi">' + _maFmtNum(a.week52_high) + '</span>';
+}
+
+function renderMajorAssets() {
+  var table = document.getElementById('majorAssetsTable');
+  if (!table) return;
+
+  var updEl = document.getElementById('majorAssetsUpdated');
+  if (updEl) {
+    updEl.textContent = (dashboardData && dashboardData.last_updated)
+      ? 'Updated ' + timeAgo(dashboardData.last_updated) : '';
+  }
+
+  var ma = dashboardData && dashboardData.major_assets;
+  if (!ma || !ma.assets || !ma.assets.length) {
+    table.innerHTML = '<tbody><tr><td class="ma-empty">Asset data unavailable right now.</td></tr></tbody>';
+    return;
+  }
+
+  var COLS = ['1D', '1W', '1M', 'YTD', '1Y', '5Y'];
+  var html = '<thead><tr>' +
+    '<th class="ma-name">Asset</th>' +
+    '<th class="ma-num">Current</th>' +
+    COLS.map(function (c) { return '<th class="ma-num">' + c + '</th>'; }).join('') +
+    '<th class="ma-range-h">52-Week Range</th>' +
+    '</tr></thead><tbody>';
+
+  (ma.groups || []).forEach(function (group) {
+    var rows = ma.assets.filter(function (a) { return a.group === group; });
+    if (!rows.length) return;
+    html += '<tr class="ma-group"><td colspan="9">' + escapeHtml(group) + '</td></tr>';
+    rows.forEach(function (a) {
+      html += '<tr class="ma-row">' +
+        '<td class="ma-name">' + escapeHtml(a.name) +
+          '<span class="ma-sym">' + escapeHtml(a.symbol) + '</span></td>' +
+        '<td class="ma-num ma-current">' + _maFmtCurrent(a) + '</td>' +
+        COLS.map(function (c) {
+          var v = a.changes ? a.changes[c] : null;
+          return '<td class="ma-num ' + _maChangeClass(v, a.kind) + '">' +
+            _maFmtChange(v, a.kind) + '</td>';
+        }).join('') +
+        '<td class="ma-range">' + _maRangeBar(a) + '</td>' +
+        '</tr>';
+    });
+  });
+  html += '</tbody>';
+  table.innerHTML = html;
 }
 
 function renderAssetComparison() {

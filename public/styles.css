@@ -1981,3 +1981,108 @@ html[data-theme="light"] .etf-total { background: #eef0f2; }
 html[data-theme="light"] .badge-blue  { color: #1d4ed8; }
 html[data-theme="light"] .badge-green { color: #15803d; }
 html[data-theme="light"] .badge-red   { color: #b91c1c; }
+
+/* ============================================================
+   MAJOR ASSET PERFORMANCE TABLE (BTC vs Assets tab).
+   All colors via theme vars -> works in dark AND light automatically.
+   ============================================================ */
+.major-assets-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.major-assets-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.major-assets-updated {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.major-assets-table-wrap {
+  margin-top: 1rem;
+  overflow-x: auto;   /* narrow screens scroll horizontally */
+}
+.major-assets-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.major-assets-table th {
+  font-weight: 500;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border-color);
+  text-align: right;
+}
+.major-assets-table th.ma-name { text-align: left; }
+.major-assets-table th.ma-range-h { text-align: center; min-width: 150px; }
+.major-assets-table td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border-color);
+}
+.major-assets-table tbody tr:last-child td { border-bottom: none; }
+.ma-num { text-align: right; font-family: var(--font-mono); }
+.ma-current { color: var(--text-primary); font-weight: 600; }
+td.ma-name { color: var(--text-primary); font-weight: 500; }
+.ma-sym {
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  font-family: var(--font-mono);
+  margin-left: 0.45rem;
+}
+.ma-flat { color: var(--text-muted); }
+.ma-group td {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 0.35rem 0.6rem;
+}
+/* 52-week range bar: rail + amber fill (low->current) + position tick */
+.ma-range { text-align: center; }
+.ma-rlo, .ma-rhi {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  vertical-align: middle;
+}
+.ma-track {
+  position: relative;
+  display: inline-block;
+  width: 84px;
+  height: 5px;
+  margin: 0 0.5rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-full);
+  vertical-align: middle;
+}
+.ma-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--amber);
+  opacity: 0.55;
+  border-radius: var(--radius-full);
+}
+.ma-marker {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 11px;
+  margin-left: -1px;
+  background: var(--text-primary);
+  border-radius: 1px;
+}
+.ma-empty { color: var(--text-muted); padding: 1rem; text-align: center; }

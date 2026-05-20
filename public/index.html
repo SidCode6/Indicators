@@ -133,6 +133,18 @@
     <!-- SECTION 2: BTC VS ASSETS -->
     <section id="assets" class="section">
       <div class="container">
+        <!-- Major Asset Performance: full-width table (rates / markets / stocks-crypto) -->
+        <div class="major-assets-card">
+          <div class="major-assets-head">
+            <h3 class="compare-title">Major Asset Performance</h3>
+            <span class="major-assets-updated" id="majorAssetsUpdated"></span>
+          </div>
+          <p class="compare-desc">Current level, change across windows, and 52-week range. Yields use inverted color (down = green).</p>
+          <div class="major-assets-table-wrap">
+            <table class="major-assets-table" id="majorAssetsTable"><!-- injected by JS --></table>
+          </div>
+        </div>
+
         <div class="container-narrow">
           <div class="assets-card">
             <h3 class="compare-title">Asset Performance</h3>

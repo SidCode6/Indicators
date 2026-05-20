@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 # Add parent directory to path so we can run from anywhere
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from sources import coingecko, blockchain, fear_greed, fred, yahoo, etf_flows, tickers, btc_chart
+from sources import coingecko, blockchain, fear_greed, fred, yahoo, etf_flows, tickers, btc_chart, major_assets
 
 
 # Paths relative to this script's location
@@ -279,6 +279,24 @@ def main():
         fail_count += 1
         print(f"  FAILED: {e}")
 
+    # --- Major Asset Performance table (top of BTC-vs-Assets tab) ---
+    try:
+        print("\n[major assets] Fetching major asset performance table...")
+        ma = major_assets.fetch()
+        # Success iff at least one asset returned a current value; otherwise
+        # leave it unset so the stale-value fallback restores the prior table.
+        if ma and any(a.get("current") is not None for a in ma.get("assets", [])):
+            results["major_assets"] = ma
+            n_ok = sum(1 for a in ma["assets"] if a.get("current") is not None)
+            success_count += 1
+            print(f"  OK: major assets ({n_ok}/{len(ma['assets'])} with data)")
+        else:
+            fail_count += 1
+            print("  FAILED: major assets returned no data")
+    except Exception as e:
+        fail_count += 1
+        print(f"  FAILED: {e}")
+
     # --- Assemble final data.json ---
     print("\n" + "=" * 50)
     print("Assembling data.json...")
@@ -396,6 +414,10 @@ def main():
             tf: {sym: v for sym, v in vals.items() if sym in ("BTC", "GOLD", "SP500")}
             for tf, vals in (yahoo_results.get("asset_returns") or {}).items()
         },
+
+        # Major Asset Performance table (top of the BTC-vs-Assets tab).
+        # None on total fetch failure -> restored by the stale-value fallback.
+        "major_assets": results.get("major_assets"),
     }
 
     # --- Per-block freshness ---
@@ -412,6 +434,7 @@ def main():
     bc_ok      = results.get("blockchain") is not None
     fg_ok      = results.get("fear_greed") is not None
     etf_ok     = results.get("etf_flows") is not None
+    ma_ok      = results.get("major_assets") is not None
     data["_data_freshness"] = {
         "bitcoin":       now_iso if cg_ok else None,
         "block_height":  now_iso if bc_ok else None,
@@ -424,6 +447,7 @@ def main():
         "treasuries":    now_iso if fred_ok else None,
         "tickers":       now_iso if tickers_ok else None,
         "asset_returns": now_iso if yahoo_ok else None,
+        "major_assets":  now_iso if ma_ok else None,
     }
 
     # --- Stale-value fallback: substitute any all-null sub-block from previous ---
