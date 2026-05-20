@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Indicators Dashboard</title>
+  <!-- Apply saved theme before paint (avoids a flash of dark when light is chosen). Default = dark. -->
+  <script>(function(){try{if(localStorage.getItem('indicatorsTheme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -52,6 +54,7 @@
       </div>
       <div class="nav-meta">
         <span class="last-updated" id="lastUpdated">Loading...</span>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light / dark mode" title="Toggle light / dark mode"></button>
       </div>
     </div>
   </nav>

@@ -161,7 +161,25 @@ img, svg {
 
 .nav-meta {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
+
+/* Light / dark theme toggle (top-right, muted icon button) */
+.theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+  border-radius: var(--radius-full);
+  transition: var(--transition);
+}
+.theme-toggle:hover { color: var(--text-primary); }
 
 .last-updated {
   font-size: 0.75rem;
@@ -1898,3 +1916,68 @@ img, svg {
   font-size: 0.625rem;
   vertical-align: super;
 }
+
+/* ============================================================
+   LIGHT THEME  (opt-in via <html data-theme="light">).
+   Dark mode is the default and is left completely untouched —
+   everything below is additive override only, so there is zero
+   regression risk to the existing dark UI.
+   ============================================================ */
+html[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-card: #f4f5f7;
+  --bg-secondary: #e7e9ec;
+  --border-color: #d6dade;
+  --text-primary: #0b0d10;
+  --text-muted: #5b626b;
+  --green: #15803d;   /* darker for contrast on white */
+  --red:   #dc2626;
+  --amber: #b45309;
+  --orange:#c2410c;
+  --blue:  #1d4ed8;
+}
+
+/* Sticky nav: translucent light instead of translucent black */
+html[data-theme="light"] .nav { background: rgba(255, 255, 255, 0.85); }
+
+/* Inverted "active/primary" buttons: bg is near-black (var --text-primary),
+   so their text must be the page bg, not hardcoded #000 (black-on-black). */
+html[data-theme="light"] .compare-btn,
+html[data-theme="light"] .chart-tf-btn.active,
+html[data-theme="light"] .timeframe-btn.active {
+  color: var(--bg-primary);
+}
+html[data-theme="light"] .compare-btn:hover {
+  background: #1f2937;
+  border-color: #1f2937;
+}
+html[data-theme="light"] .compare-btn:disabled {
+  background: #d1d5db; color: #6b7280; border-color: #d1d5db;
+}
+
+/* Inputs / hover borders that hardcoded dark values */
+html[data-theme="light"] #compareInput { background: #ffffff; }
+html[data-theme="light"] #compareInput::placeholder { color: #9aa1a9; }
+html[data-theme="light"] .chart-tf-btn:hover,
+html[data-theme="light"] .timeframe-btn:hover,
+html[data-theme="light"] .metric-card:hover,
+html[data-theme="light"] .asset-card:hover { border-color: #9aa1a9; }
+html[data-theme="light"] .compare-preview a { color: #1d4ed8; }
+html[data-theme="light"] .compare-preview a:hover { color: #1e40af; }
+
+/* Asset comparison cards (hardcoded dark surfaces) */
+html[data-theme="light"] .asset-card { background: #f4f5f7; border-color: #d6dade; }
+html[data-theme="light"] .asset-icon { background: #e7e9ec; }
+/* "winner" card was pure white (== page bg in light) -> give it a green tint */
+html[data-theme="light"] .asset-card.winner {
+  background: #e9f7ee; border-color: var(--green); color: var(--text-primary);
+}
+html[data-theme="light"] .asset-card.winner .asset-icon { background: var(--green); color: #ffffff; }
+
+/* NODE / misc dark surfaces */
+html[data-theme="light"] .etf-total { background: #eef0f2; }
+
+/* Tinted badges: darken the text so it reads on the light tint */
+html[data-theme="light"] .badge-blue  { color: #1d4ed8; }
+html[data-theme="light"] .badge-green { color: #15803d; }
+html[data-theme="light"] .badge-red   { color: #b91c1c; }
