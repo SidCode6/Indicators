@@ -88,6 +88,12 @@ img, svg {
   padding-right: 1.5rem;
 }
 
+/* Slightly wider container — used by the Major Asset Performance table so
+   all columns (incl. the 52-week range) fit without horizontal scroll. */
+.container-wide {
+  max-width: 66rem;
+}
+
 .container-narrow {
   max-width: 42rem;
   margin-left: auto;
@@ -2042,6 +2048,17 @@ td.ma-name { color: var(--text-primary); font-weight: 500; }
   margin-left: 0.45rem;
 }
 .ma-flat { color: var(--text-muted); }
+.ma-freq {
+  margin-left: 0.45rem;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  padding: 0.05rem 0.4rem;
+  vertical-align: middle;
+}
 .ma-group td {
   font-size: 0.66rem;
   text-transform: uppercase;

@@ -1482,9 +1482,13 @@ function renderMajorAssets() {
     if (!rows.length) return;
     html += '<tr class="ma-group"><td colspan="9">' + escapeHtml(group) + '</td></tr>';
     rows.forEach(function (a) {
+      var freqTag = a.freq === 'monthly'
+        ? '<span class="ma-freq" title="Monthly series (FRED)' +
+            (a.as_of ? ', as of ' + escapeHtml(a.as_of) : '') + '">monthly</span>'
+        : '';
       html += '<tr class="ma-row">' +
         '<td class="ma-name">' + escapeHtml(a.name) +
-          '<span class="ma-sym">' + escapeHtml(a.symbol) + '</span></td>' +
+          '<span class="ma-sym">' + escapeHtml(a.symbol) + '</span>' + freqTag + '</td>' +
         '<td class="ma-num ma-current">' + _maFmtCurrent(a) + '</td>' +
         COLS.map(function (c) {
           var v = a.changes ? a.changes[c] : null;

@@ -92,6 +92,32 @@ def test_range_position():
     check(r["range_pos_pct"] == 75.0, "current 110 -> 75% of band")
 
 
+def test_fred_monthly():
+    print("\n[FRED monthly] pp-deltas anchored on latest print; 1D/1W None")
+    months = []
+    y, m = 2021, 1
+    for _ in range(64):  # Jan 2021 .. Apr 2026
+        months.append(datetime(y, m, 1, tzinfo=timezone.utc))
+        m += 1
+        if m > 12:
+            m, y = 1, y + 1
+    obs = [(d, 2.0) for d in months]
+    obs[-1] = (months[-1], 2.5)  # latest month jumps to 2.5
+    r = ma._row_from_fred("Japan 10-Year", "JP10Y", "Rates / Bonds", "rate",
+                          obs, datetime.now(timezone.utc))
+    check(r["freq"] == "monthly", "freq = monthly")
+    check(r["current"] == 2.5, "current = latest print (2.5)")
+    check(r["as_of"] == months[-1].strftime("%Y-%m-%d"), "as_of = latest obs date")
+    check(r["changes"]["1D"] is None and r["changes"]["1W"] is None,
+          "1D/1W = None (no daily data)")
+    for w in ("1M", "YTD", "1Y", "5Y"):
+        check(r["changes"][w] == 0.5, f"{w} = +0.50 pp")
+    check(r["week52_low"] == 2.0 and r["week52_high"] == 2.5, "52w range 2.0-2.5")
+    check(r["range_pos_pct"] == 100.0, "current at top of 52w band")
+    empty = ma._row_from_fred("X", "X", "g", "rate", [], datetime.now(timezone.utc))
+    check(empty["current"] is None and empty["freq"] == "monthly", "empty obs -> nulls")
+
+
 def test_empty_history():
     print("\n[edge] empty history -> all None, no crash")
     now = datetime.now(timezone.utc)
@@ -103,7 +129,8 @@ def test_empty_history():
 
 if __name__ == "__main__":
     for fn in (test_asset_percent_returns, test_rate_pp_deltas, test_ytd_baseline,
-               test_short_history_none, test_range_position, test_empty_history):
+               test_short_history_none, test_range_position, test_fred_monthly,
+               test_empty_history):
         fn()
     print("\n" + "=" * 50)
     if _fail:
