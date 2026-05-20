@@ -36,12 +36,16 @@ HISTORY_PERIOD = "10y"
 #                                 10Y yields aren't on Yahoo, and FRED's OECD long-
 #                                 term rates are MONTHLY + ~1-2 months lagged, so
 #                                 those rows have no 1D/1W and are tagged "monthly".
+#   source = "mof_jp:<SERIES>" -> Japan 10Y from MOF's official DAILY JGB CSV
+#                                 (live, full windows). Falls back to the FRED
+#                                 monthly series after the colon if MOF can't be
+#                                 reached from the host.
 ASSETS = [
     # Rates / Bonds (Yahoo yield tickers; values are the yield level in %)
     ("3-Month T-Bill", "^IRX", "Rates / Bonds", "rate", "yahoo"),
     ("10-Year Treasury", "^TNX", "Rates / Bonds", "rate", "yahoo"),
     ("30-Year Treasury", "^TYX", "Rates / Bonds", "rate", "yahoo"),
-    ("Japan 10-Year", "JP10Y", "Rates / Bonds", "rate", "fred:IRLTLT01JPM156N"),
+    ("Japan 10-Year", "JP10Y", "Rates / Bonds", "rate", "mof_jp:IRLTLT01JPM156N"),
     ("India 10-Year", "IN10Y", "Rates / Bonds", "rate", "fred:INDIRLTLT01STM"),
     # Major markets
     ("S&P 500", "^GSPC", "Major Markets", "asset", "yahoo"),
@@ -188,28 +192,40 @@ def _val_on_or_before(obs, target):
     return v
 
 
-def _row_from_fred(name, symbol, group, kind, obs, now) -> dict:
-    """Pure compute for a MONTHLY FRED rate. Changes are percentage-point
-    deltas anchored on the LATEST observation (true month-over-month / YTD /
-    YoY moves regardless of publication lag). 1D/1W are None."""
+def _row_from_series(name, symbol, group, kind, obs, now, freq) -> dict:
+    """Pure compute for a dated value series — `obs` is a list of
+    (datetime, value) sorted oldest->newest. Changes are anchored on the
+    LATEST observation (`as_of`) so they reflect true period moves regardless
+    of any publication lag: percentage-point deltas for a rate, percent
+    returns for an asset.
+
+      freq="daily"   -> 1D/1W are computed from the trailing trading days.
+      freq="monthly" -> 1D/1W are None (no daily granularity)."""
     base = {"name": name, "symbol": symbol, "group": group, "kind": kind,
             "current": None, "changes": {}, "week52_low": None,
             "week52_high": None, "range_pos_pct": None,
-            "freq": "monthly", "as_of": None}
+            "freq": freq, "as_of": None}
     if not obs:
         return base
     as_of, current = obs[-1][0], round(obs[-1][1], 2)
 
-    def d(v):  # pp-delta of the yield level vs current
-        return None if v is None else round(current - v, 2)
+    def ch(target):  # change vs the value as-of `target` (pp for rate, % else)
+        past = _val_on_or_before(obs, target)
+        if past is None:
+            return None
+        if kind == "rate":
+            return round(current - past, 2)
+        return None if past == 0 else round((current - past) / past * 100.0, 2)
 
+    daily = freq == "daily"
     jan1 = datetime(as_of.year, 1, 1, tzinfo=timezone.utc)
     changes = {
-        "1D": None, "1W": None,
-        "1M":  d(_val_on_or_before(obs, as_of - timedelta(days=31))),
-        "YTD": d(_val_on_or_before(obs, jan1)),
-        "1Y":  d(_val_on_or_before(obs, as_of - timedelta(days=365))),
-        "5Y":  d(_val_on_or_before(obs, as_of - timedelta(days=365 * 5))),
+        "1D":  ch(as_of - timedelta(days=1)) if daily else None,
+        "1W":  ch(as_of - timedelta(days=7)) if daily else None,
+        "1M":  ch(as_of - timedelta(days=31)),
+        "YTD": ch(jan1),
+        "1Y":  ch(as_of - timedelta(days=365)),
+        "5Y":  ch(as_of - timedelta(days=365 * 5)),
     }
     recent = [v for (dt, v) in obs if dt >= as_of - timedelta(days=365)]
     lo = round(min(recent), 2) if recent else None
@@ -223,9 +239,75 @@ def _row_from_fred(name, symbol, group, kind, obs, now) -> dict:
     return base
 
 
+def _row_from_fred(name, symbol, group, kind, obs, now) -> dict:
+    """MONTHLY FRED rate (foreign sovereign 10Y). Thin wrapper over
+    _row_from_series with freq="monthly" (1D/1W -> None)."""
+    return _row_from_series(name, symbol, group, kind, obs, now, freq="monthly")
+
+
 def _one_fred(name, symbol, series_id, group, kind, now) -> dict:
     return _row_from_fred(name, symbol, group, kind,
                           _fred_observations(series_id), now)
+
+
+# --------------------------- Japan MOF (daily) ------------------------------
+# Japan's 10Y JGB yield isn't on Yahoo, but the Ministry of Finance publishes
+# the official daily yield curve as plain CSV. Two files are needed: the
+# historical "_all" file (1974->prior month) plus the current-month file (the
+# historical file lags ~3 weeks). Both share the same columns, so 10Y is
+# always column index 10. Missing values are "-"; dates are YYYY/M/D. This
+# gives Japan full daily windows (1D/1W/.../5Y) like the US treasuries.
+
+MOF_JGB_URLS = (
+    "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/historical/jgbcme_all.csv",
+    "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv",
+)
+MOF_JGB_10Y_COL = 10  # Date,1Y,2Y,3Y,4Y,5Y,6Y,7Y,8Y,9Y,10Y,15Y,20Y,25Y,30Y,40Y
+
+
+def _parse_mof_csv(text, into: dict) -> None:
+    """Parse MOF JGB CSV text, adding {datetime: 10Y_yield} into `into`.
+    Silently skips the title/header/blank/footer rows and "-"/"" values."""
+    for line in text.splitlines():
+        parts = line.split(",")
+        if len(parts) <= MOF_JGB_10Y_COL:
+            continue
+        date_s, val_s = parts[0].strip(), parts[MOF_JGB_10Y_COL].strip()
+        if not val_s or val_s == "-":
+            continue
+        try:
+            dt = datetime.strptime(date_s, "%Y/%m/%d").replace(tzinfo=timezone.utc)
+            into[dt] = float(val_s)
+        except ValueError:
+            continue
+
+
+def _mof_jgb_observations():
+    """Japan 10Y JGB daily yields from the MOF CSVs, merged + sorted as
+    [(datetime, yield%)]. Each URL is fetched independently so a current-month
+    hiccup still yields the historical series; [] only if BOTH fail (caller
+    then falls back to FRED monthly)."""
+    merged: dict = {}
+    for url in MOF_JGB_URLS:
+        try:
+            resp = requests.get(url, timeout=20,
+                                headers={"User-Agent": "Indicators-Dashboard/1.0"})
+            resp.raise_for_status()
+            _parse_mof_csv(resp.content.decode("utf-8", errors="replace"), merged)
+        except Exception as e:
+            print(f"[major_assets] MOF JGB {url.split('/')[-1]} error: {e}")
+            continue
+    return sorted(merged.items())
+
+
+def _one_japan(name, symbol, fred_series, group, kind, now) -> dict:
+    """Japan 10Y: prefer MOF official DAILY yields; fall back to the FRED
+    MONTHLY OECD long-term rate if MOF is unreachable from the host."""
+    obs = _mof_jgb_observations()
+    if obs:
+        return _row_from_series(name, symbol, group, kind, obs, now, freq="daily")
+    print(f"[major_assets] {name}: MOF unavailable, falling back to FRED monthly")
+    return _one_fred(name, symbol, fred_series, group, kind, now)
 
 
 def fetch() -> dict:
@@ -233,7 +315,9 @@ def fetch() -> dict:
     now = datetime.now(timezone.utc)
     rows = []
     for (name, symbol, group, kind, source) in ASSETS:
-        if source.startswith("fred:"):
+        if source.startswith("mof_jp:"):
+            rows.append(_one_japan(name, symbol, source.split(":", 1)[1], group, kind, now))
+        elif source.startswith("fred:"):
             rows.append(_one_fred(name, symbol, source.split(":", 1)[1], group, kind, now))
         else:
             rows.append(_one(name, symbol, group, kind, now))

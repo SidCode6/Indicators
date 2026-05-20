@@ -127,10 +127,56 @@ def test_empty_history():
           "empty -> nulls")
 
 
+def _daily_obs(overrides=None, n=2000, base=2.00,
+               as_of=datetime(2026, 5, 19, tzinfo=timezone.utc)):
+    """Daily (datetime, value) obs ending at as_of; value=base except for the
+    day-offsets in `overrides` ({days_back_from_as_of: value})."""
+    ov = overrides or {}
+    return [(as_of - timedelta(days=k), ov.get(k, base)) for k in range(n - 1, -1, -1)]
+
+
+def test_series_daily():
+    print("\n[series daily] MOF-style daily rate: 1D/1W POPULATED + pp-deltas")
+    now = datetime.now(timezone.utc)
+    # as_of=2.50, prior trading day=2.40, everything earlier=2.00
+    obs = _daily_obs({0: 2.50, 1: 2.40})
+    r = ma._row_from_series("Japan 10-Year", "JP10Y", "Rates / Bonds", "rate",
+                            obs, now, freq="daily")
+    check(r["freq"] == "daily", "freq = daily")
+    check(r["current"] == 2.5, "current = 2.5 (latest obs)")
+    check(r["as_of"] == "2026-05-19", "as_of = latest obs date")
+    check(r["changes"]["1D"] == 0.1, "1D = +0.10 pp (2.50 vs prior 2.40)")
+    check(r["changes"]["1W"] == 0.5, "1W = +0.50 pp (2.50 vs 2.00)")
+    for w in ("1M", "YTD", "1Y", "5Y"):
+        check(r["changes"][w] == 0.5, f"{w} = +0.50 pp")
+    check(r["week52_low"] == 2.0 and r["week52_high"] == 2.5, "52w range 2.0-2.5")
+    check(r["range_pos_pct"] == 100.0, "current at top of 52w band")
+
+
+def test_mof_parse():
+    print("\n[MOF parse] skips title/header/blank/footer/'-'; keeps 10Y col")
+    csv = "\n".join([
+        "Interest Rate,,,,,,,,,,,,,,,(Unit : %)",
+        "Date,1Y,2Y,3Y,4Y,5Y,6Y,7Y,8Y,9Y,10Y,15Y,20Y,25Y,30Y,40Y",
+        "2026/5/18,1.128,1.431,1.628,1.849,2.015,2.163,2.308,2.454,2.594,2.729,3.306,3.665,3.979,4,4.006",
+        "2026/5/19,1.135,1.452,1.654,1.878,2.051,2.208,2.359,2.507,2.646,2.783,3.36,3.717,4.028,4.043,4.043",
+        "1974/9/24,10.327,9.362,8.83,8.515,8.348,8.29,8.24,8.121,8.127,-,-,-,-,-,-",
+        ",,,,,,,,,,,,,,,",
+        '"  garbage footer note about clearing cache",,,,,,,,,,,,,,,',
+    ])
+    into = {}
+    ma._parse_mof_csv(csv, into)
+    check(len(into) == 2, "only the 2 valid 10Y rows parse (1974 has '-')")
+    k19 = datetime(2026, 5, 19, tzinfo=timezone.utc)
+    k18 = datetime(2026, 5, 18, tzinfo=timezone.utc)
+    check(into.get(k19) == 2.783, "2026-05-19 -> 2.783 (col index 10)")
+    check(into.get(k18) == 2.729, "2026-05-18 -> 2.729")
+
+
 if __name__ == "__main__":
     for fn in (test_asset_percent_returns, test_rate_pp_deltas, test_ytd_baseline,
                test_short_history_none, test_range_position, test_fred_monthly,
-               test_empty_history):
+               test_empty_history, test_series_daily, test_mof_parse):
         fn()
     print("\n" + "=" * 50)
     if _fail:
