@@ -148,6 +148,40 @@ def _yahoo_change(yahoo_results, name):
 
 # ----- Main orchestration --------------------------------------------------
 
+NODE_LATEST_RAW_URL = (
+    "https://raw.githubusercontent.com/SidCode6/Indicators/main/public/node/latest.json"
+)
+
+
+def sync_node_snapshot():
+    """Refresh public/node/latest.json from the repo via GitHub raw.
+
+    The NODE ETF tab reads public/node/latest.json, which is produced once a
+    business day by the `node-daily` GitHub Action and committed to the repo —
+    NOT by this fetcher. On Railway the served copy is part of the deploy
+    checkout, so it only changes on a redeploy; the Action's data-only commits
+    don't trigger one, leaving the tab stuck on an old snapshot for days.
+
+    Pulling the committed file each cycle (just like data.json is rewritten
+    each cycle) keeps the live tab within ~10 min of the repo with no redeploy
+    needed. Best-effort: any failure is logged and swallowed so it can never
+    affect the main dashboard fetch.
+    """
+    try:
+        import requests
+        resp = requests.get(NODE_LATEST_RAW_URL, timeout=15,
+                            headers={"User-Agent": "Indicators-Dashboard/1.0"})
+        resp.raise_for_status()
+        payload = resp.json()  # validate it parses before overwriting
+        node_path = os.path.join(PROJECT_DIR, "public", "node", "latest.json")
+        os.makedirs(os.path.dirname(node_path), exist_ok=True)
+        with open(node_path, "w") as f:
+            json.dump(payload, f, indent=2)
+        print(f"[main] synced NODE latest.json (as_of {payload.get('as_of')})")
+    except Exception as e:
+        print(f"[main] NODE sync skipped: {e}")
+
+
 def main():
     print("=" * 50)
     print(f"Fetcher started at {datetime.now(timezone.utc).isoformat()}")
@@ -465,6 +499,9 @@ def main():
     with open(DATA_JSON_PATH, "w") as f:
         json.dump(data, f, indent=2)
     print(f"Wrote {DATA_JSON_PATH}")
+
+    # Keep the NODE ETF snapshot fresh (decoupled from Railway redeploys).
+    sync_node_snapshot()
 
     # Save the (post-fallback) snapshot for the next run's fallback baseline
     save_previous_data(data)
